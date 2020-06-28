@@ -11,7 +11,7 @@
 
   "environment": "*",
   "entrypoints": {
-    "main": ["net.gegy1000.overworldtwo.OverworldTwoInitializer"]
+    "main": ["net.gegy1000.overworldtwo.OverworldTwo"]
   },
   "mixins": ["overworld_two.mixins.json"],
 

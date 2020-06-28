@@ -2,12 +2,14 @@ package net.gegy1000.overworldtwo.generator;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.gegy1000.overworldtwo.OverworldTwo;
 import net.gegy1000.overworldtwo.noise.Noise;
 import net.gegy1000.overworldtwo.noise.NoiseFactory;
 import net.gegy1000.overworldtwo.noise.NormalizedNoise;
 import net.gegy1000.overworldtwo.noise.OctaveNoise;
 import net.gegy1000.overworldtwo.noise.PerlinNoise;
 import net.minecraft.block.Blocks;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.biome.Biome;
@@ -81,7 +83,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     }
 
     public static void register() {
-        Registry.register(Registry.CHUNK_GENERATOR, "overworld_two", CODEC);
+        Registry.register(Registry.CHUNK_GENERATOR, new Identifier(OverworldTwo.ID, "overworld_two"), CODEC);
     }
 
     // TODO: better support customization
