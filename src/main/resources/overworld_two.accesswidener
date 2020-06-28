@@ -1,0 +1,17 @@
+accessWidener v1 named
+
+extendable class net/minecraft/world/gen/chunk/SurfaceChunkGenerator
+extendable method net/minecraft/world/gen/chunk/SurfaceChunkGenerator sampleNoise (IIIDDDD)D
+extendable method net/minecraft/world/gen/chunk/SurfaceChunkGenerator sampleNoiseColumn ([DII)V
+
+accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator biomeSource Lnet/minecraft/world/biome/source/BiomeSource;
+accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24778 J
+accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24774 Lnet/minecraft/world/gen/chunk/ChunkGeneratorType;
+accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24775 [F
+accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator noiseSizeY I
+
+accessible method net/minecraft/world/gen/chunk/ChunkGeneratorType <init> (Lnet/minecraft/world/gen/chunk/StructuresConfig;Lnet/minecraft/world/gen/chunk/NoiseConfig;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;IIIZ)V
+accessible method net/minecraft/client/world/GeneratorType <init> (Ljava/lang/String;)V
+
+accessible field net/minecraft/util/math/noise/SimplexNoiseSampler gradients [[I
+accessible method net/minecraft/util/math/noise/SimplexNoiseSampler dot ([IDDD)D
