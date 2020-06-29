@@ -1,6 +1,7 @@
-package net.gegy1000.overworldtwo;
+package net.gegy1000.overworldtwo.mixin;
 
-import com.mojang.serialization.Codec;
+import net.gegy1000.overworldtwo.BlockBrush;
+import net.gegy1000.overworldtwo.BlockCanvas;
 import net.gegy1000.overworldtwo.generator.OverworldTwoChunkGenerator;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -11,25 +12,32 @@ import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.feature.OreFeature;
 import net.minecraft.world.gen.feature.OreFeatureConfig;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Random;
 
-public class Ow2OreFeature extends OreFeature {
+@Mixin(OreFeature.class)
+public class MixinOreFeature {
     private static final float PI = (float) Math.PI;
     private static final int MAX_SLOPE = 4;
 
     private final BlockCanvas canvas = new BlockCanvas();
 
-    public Ow2OreFeature(Codec<OreFeatureConfig> codec) {
-        super(codec);
+    @Inject(method = "generate", at = @At("HEAD"), cancellable = true)
+    public void generate(
+            ServerWorldAccess world, StructureAccessor structures, ChunkGenerator generator,
+            Random random, BlockPos origin, OreFeatureConfig config,
+            CallbackInfoReturnable<Boolean> ci
+    ) {
+        if (generator instanceof OverworldTwoChunkGenerator) {
+            ci.setReturnValue(this.generate(world, random, origin, config));
+        }
     }
 
-    @Override
-    public boolean generate(ServerWorldAccess world, StructureAccessor structures, ChunkGenerator generator, Random random, BlockPos origin, OreFeatureConfig config) {
-        if (!(generator instanceof OverworldTwoChunkGenerator)) {
-            return super.generate(world, structures, generator, random, origin, config);
-        }
-
+    private boolean generate(ServerWorldAccess world, Random random, BlockPos origin, OreFeatureConfig config) {
         float theta = random.nextFloat() * PI;
 
         int nodeRadius = MathHelper.ceil((config.size / 16.0F * 2.0F + 1.0F) / 2.0F);

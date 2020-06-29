@@ -4,6 +4,7 @@
   "package": "net.gegy1000.overworldtwo.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "MixinOreFeature"
   ],
   "injectors": {
     "defaultRequire": 1
