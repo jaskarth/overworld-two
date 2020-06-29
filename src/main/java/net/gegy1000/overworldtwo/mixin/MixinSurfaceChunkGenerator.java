@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-// TODO: not working as intended
 @Mixin(SurfaceChunkGenerator.class)
 public class MixinSurfaceChunkGenerator {
     @Redirect(
@@ -48,7 +47,7 @@ public class MixinSurfaceChunkGenerator {
             ),
             locals = LocalCapture.CAPTURE_FAILHARD
     )
-    private void populateStructures(
+    private void collectStructures(
             WorldAccess world, StructureAccessor structures, Chunk chunk,
             CallbackInfo ci, ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions
     ) {
@@ -64,15 +63,16 @@ public class MixinSurfaceChunkGenerator {
             return;
         }
 
-        for (Map.Entry<StructureFeature<?>, LongSet> entry : structureReferences.entrySet()) {
-            StructureFeature<?> feature = entry.getKey();
+        for (StructureFeature<?> feature : StructureFeature.field_24861) {
+            LongSet references = structureReferences.get(feature);
+            if (references == null) continue;
 
-            LongSet references = entry.getValue();
             LongIterator referenceIterator = references.iterator();
+
             while (referenceIterator.hasNext()) {
                 long packedReference = referenceIterator.nextLong();
-                int referenceX = (int) packedReference;
-                int referenceZ = (int) (packedReference >> 32);
+                int referenceX = ChunkPos.getPackedX(packedReference);
+                int referenceZ = ChunkPos.getPackedZ(packedReference);
 
                 Chunk referenceChunk = world.getChunk(referenceX, referenceZ, ChunkStatus.STRUCTURE_STARTS);
                 StructureStart<?> start = referenceChunk.getStructureStart(feature);

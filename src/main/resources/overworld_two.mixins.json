@@ -4,11 +4,18 @@
   "package": "net.gegy1000.overworldtwo.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MixinDecorator", "MixinOreFeature", "decorator.MixinChanceHeightmapDecorator",
-    "decorator.MixinChanceHeightmapDoubleDecorator", "decorator.MixinCountHeight64Decorator",
-    "decorator.MixinCountHeightmap32Decorator", "decorator.MixinCountHeightmapDecorator",
-    "decorator.MixinCountHeightmapDoubleDecorator", "decorator.MixinCountTopSolidDecorator",
-    "decorator.MixinNoiseHeightmap32Decorator", "decorator.MixinNoiseHeightmapDoubleDecorator"
+    "MixinDecorator",
+    "MixinOreFeature",
+    "MixinSurfaceChunkGenerator",
+    "decorator.MixinChanceHeightmapDecorator",
+    "decorator.MixinChanceHeightmapDoubleDecorator",
+    "decorator.MixinCountHeight64Decorator",
+    "decorator.MixinCountHeightmap32Decorator",
+    "decorator.MixinCountHeightmapDecorator",
+    "decorator.MixinCountHeightmapDoubleDecorator",
+    "decorator.MixinCountTopSolidDecorator",
+    "decorator.MixinNoiseHeightmap32Decorator",
+    "decorator.MixinNoiseHeightmapDoubleDecorator"
   ],
   "injectors": {
     "defaultRequire": 1
