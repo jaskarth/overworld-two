@@ -1,5 +1,6 @@
 package net.gegy1000.overworldtwo.mixin.decorator;
 
+import net.gegy1000.overworldtwo.decorator.CountHeightmapStream;
 import net.gegy1000.overworldtwo.decorator.CountTopStream;
 import net.gegy1000.overworldtwo.decorator.DecoratorStream;
 import net.minecraft.util.math.BlockPos;
@@ -16,7 +17,7 @@ import java.util.stream.Stream;
 
 @Mixin(CountHeightmapDecorator.class)
 public class MixinCountHeightmapDecorator {
-    private final DecoratorStream<CountDecoratorConfig> stream = new CountTopStream(Heightmap.Type.MOTION_BLOCKING, y -> y);
+    private final DecoratorStream<CountDecoratorConfig> stream = new CountHeightmapStream(Heightmap.Type.MOTION_BLOCKING);
 
     /**
      * @reason replace with non-allocating stream
