@@ -193,7 +193,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         } else {
             double left = this.surfaceNoise[0].get(x, z);
             double right = this.surfaceNoise[1].get(x, z);
-            surfaceNoise = MathHelper.clampedLerp(left, right, tearNoise);
+            surfaceNoise = MathHelper.lerp(tearNoise, left, right);
         }
 
         // map from [-1; 1] to [-0.25; 1]
