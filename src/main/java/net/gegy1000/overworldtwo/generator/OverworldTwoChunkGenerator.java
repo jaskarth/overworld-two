@@ -38,7 +38,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private static final int NOISE_RES_Y = 2;
 
     private static final float DEPTH_SCALE = 16.0F;
-    private static final float DEPTH_OFFSET = 62.0F;
+    private static final float DEPTH_OFFSET = 54.0F;
 
     private final Noise[] surfaceNoise;
     private final Noise tearNoise;
