@@ -38,7 +38,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private static final int NOISE_RES_Y = 2;
 
     private static final float DEPTH_SCALE = 16.0F;
-    private static final float DEPTH_OFFSET = 62.0F;
+    private static final float DEPTH_OFFSET = 54.0F;
 
     private final Noise[] surfaceNoise;
     private final Noise tearNoise;
@@ -193,7 +193,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         } else {
             double left = this.surfaceNoise[0].get(x, z);
             double right = this.surfaceNoise[1].get(x, z);
-            surfaceNoise = MathHelper.lerp(tearNoise, left, right);
+            surfaceNoise = MathHelper.clampedLerp(left, right, tearNoise);
         }
 
         // map from [-1; 1] to [-0.25; 1]
