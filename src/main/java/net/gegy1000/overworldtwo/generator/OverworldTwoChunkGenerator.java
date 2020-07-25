@@ -12,12 +12,9 @@ import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.WorldAccess;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
-import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.ChunkRandom;
-import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.ChunkGeneratorType;
 import net.minecraft.world.gen.chunk.NoiseConfig;
@@ -199,10 +196,18 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
             surfaceNoise = MathHelper.lerp(tearNoise, left, right);
         }
 
-        // map from [-1; 1] to [-0.25; 1]
-        surfaceNoise = (surfaceNoise + 0.75) / 1.75;
+        // Depth factor is from [0.88; 1.12]
+        double depthFactor = 1 + (surfaceNoise * 0.12);
 
-        double surfaceY = (surfaceNoise * scale) + depth;
+        // map from [-1; 1] to [-0.4; 1]
+        surfaceNoise = (surfaceNoise + 0.6) / 1.6;
+
+        // [-0.4; 1] to [-0.4; 0.8]
+        if (surfaceNoise > 0) {
+            surfaceNoise *= 0.8;
+        }
+
+        double surfaceY = (surfaceNoise * scale) + (depth * depthFactor);
 
         for (int y = 0; y <= this.noiseSizeY; y++) {
             double surfaceDepth = ((double) y / this.noiseSizeY) - surfaceY;
