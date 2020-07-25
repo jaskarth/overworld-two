@@ -12,9 +12,12 @@ import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.WorldAccess;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.gen.ChunkRandom;
+import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.ChunkGeneratorType;
 import net.minecraft.world.gen.chunk.NoiseConfig;
@@ -62,9 +65,9 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
     private static NoiseFactory surfaceNoise() {
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setFrequency(1.0 / 30.0)
-                .setLacunarity(1.1)
-                .setPersistence(1.0 / 1.6);
+                .setFrequency(1.0 / 20.0)
+                .setLacunarity(1.6)
+                .setPersistence(1.0 / 1.5);
 
         octaves.add(PerlinNoise.create(), 6);
 
