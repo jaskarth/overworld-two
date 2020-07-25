@@ -63,8 +63,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private static NoiseFactory surfaceNoise() {
         OctaveNoise.Builder octaves = OctaveNoise.builder()
                 .setFrequency(1.0 / 30.0)
-                .setLacunarity(1.8)
-                .setPersistence(1.0 / 1.9);
+                .setLacunarity(1.1)
+                .setPersistence(1.0 / 1.6);
 
         octaves.add(PerlinNoise.create(), 6);
 
@@ -165,7 +165,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         SurfaceParameters surface = this.sampleSurfaceParameters(x, z);
 
         float depth = (surface.depth * DEPTH_SCALE + DEPTH_OFFSET) / 256.0F;
-        float scale = surface.scale / 2.0F;
+        float scale = surface.scale / 1.9F;
 
         NoiseSamplingConfig sampling = noiseConfig.getSampling();
         double xzScale = 684.412 * sampling.getXZScale();
@@ -202,7 +202,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         double surfaceY = (surfaceNoise * scale) + depth;
 
         for (int y = 0; y <= this.noiseSizeY; y++) {
-            double surfaceDepth = (double) y / this.noiseSizeY - surfaceY;
+            double surfaceDepth = ((double) y / this.noiseSizeY) - surfaceY;
             if (surfaceDepth < 0.0) {
                 surfaceDepth *= 4.0;
             }

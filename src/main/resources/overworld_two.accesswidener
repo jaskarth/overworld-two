@@ -4,7 +4,6 @@ extendable class net/minecraft/world/gen/chunk/SurfaceChunkGenerator
 extendable method net/minecraft/world/gen/chunk/SurfaceChunkGenerator sampleNoise (IIIDDDD)D
 extendable method net/minecraft/world/gen/chunk/SurfaceChunkGenerator sampleNoiseColumn ([DII)V
 
-accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator biomeSource Lnet/minecraft/world/biome/source/BiomeSource;
 accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24778 J
 accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24774 Lnet/minecraft/world/gen/chunk/ChunkGeneratorType;
 accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24775 [F
