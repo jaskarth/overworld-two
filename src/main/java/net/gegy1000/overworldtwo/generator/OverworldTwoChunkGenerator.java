@@ -226,31 +226,6 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         }
     }
 
-    @Override
-    public double sampleNoise(int x, int y, int z, double xzScale, double yScale, double xzStretch, double yStretch) {
-        double nx = x * xzScale;
-        double ny = y * yScale;
-        double nz = z * xzScale;
-
-        return this.surfaceNoise[0].get(nx, ny, nz) * 128.0;
-
-//        double lerp = (this.lerpNoise.get(x * xzStretch, y * yStretch, z * xzStretch) + 1.0) / 2.0;
-//
-//        double nx = x * xzScale;
-//        double ny = y * yScale;
-//        double nz = z * xzScale;
-//
-//        if (lerp <= 0.0) {
-//            return this.lowerNoise.get(nx, ny, nz);
-//        } else if (lerp >= 1.0) {
-//            return this.upperNoise.get(nx, ny, nz);
-//        } else {
-//            double lower = this.lowerNoise.get(nx, ny, nz);
-//            double upper = this.upperNoise.get(nx, ny, nz);
-//            return MathHelper.lerp(lerp, lower, upper);
-//        }
-    }
-
     static class SurfaceParameters {
         float depth;
         float scale;
