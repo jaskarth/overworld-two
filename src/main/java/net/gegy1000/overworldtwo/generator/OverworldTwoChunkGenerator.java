@@ -62,9 +62,9 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
     private static NoiseFactory surfaceNoise() {
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setFrequency(1.0 / 20.0)
-                .setLacunarity(1.6)
-                .setPersistence(1.0 / 1.5);
+                .setFrequency(1.0 / 22.0)
+                .setLacunarity(1.7)
+                .setPersistence(1.0 / 1.8);
 
         octaves.add(PerlinNoise.create(), 6);
 
@@ -152,7 +152,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         float depth = totalDepth / totalWeight;
         float scale = totalScale / totalWeight;
 
-        this.surfaceParameters.depth = depth;
+        this.surfaceParameters.depth = (depth * 0.5F) - 0.125F;
         this.surfaceParameters.scale = (scale * 0.9F) + 0.1F;
 
         return this.surfaceParameters;
@@ -161,74 +161,61 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     @Override
     protected void sampleNoiseColumn(double[] buffer, int x, int z) {
         NoiseConfig noiseConfig = this.field_24774.method_28559();
+        SurfaceParameters params = sampleSurfaceParameters(x, z);
+        double scaledDepth = params.depth * 0.265625D;
+        double scaledScale = 96.0D / params.scale;
 
-        SurfaceParameters surface = this.sampleSurfaceParameters(x, z);
+        double topTarget = noiseConfig.getTopSlide().getTarget();
+        double topSize = noiseConfig.getTopSlide().getSize();
+        double topOffset = noiseConfig.getTopSlide().getOffset();
+        double bottomTarget = noiseConfig.getBottomSlide().getTarget();
+        double bottomSize = noiseConfig.getBottomSlide().getSize();
+        double bottomOffset = noiseConfig.getBottomSlide().getOffset();
+        double randomDensityOffset = noiseConfig.hasRandomDensityOffset() ? this.method_28553(x, z) : 0.0D;
+        double densityFactor = noiseConfig.getDensityFactor();
+        double densityOffset = noiseConfig.getDensityOffset();
 
-        float depth = (surface.depth * DEPTH_SCALE + DEPTH_OFFSET) / 256.0F;
-        float scale = surface.scale / 1.9F;
+        for(int y = 0; y <= this.noiseSizeY; ++y) {
+            double noise = this.getNoiseAt(x, y, z);
+            double yOffset = 1.0D - (double) y * 2.0D / (double)this.noiseSizeY + randomDensityOffset;
+            double density = yOffset * densityFactor + densityOffset;
+            double falloff = (density + scaledDepth) * scaledScale;
+            if (falloff > 0.0D) {
+                noise += falloff * 4.0D;
+            } else {
+                noise += falloff;
+            }
 
-        NoiseSamplingConfig sampling = noiseConfig.getSampling();
-        double xzScale = 684.412 * sampling.getXZScale();
-        double yScale = 684.412 * sampling.getYScale();
-        double xzFactor = xzScale / sampling.getXZFactor();
-        double yFactor = yScale / sampling.getYFactor();
+            double slide;
+            if (topSize > 0.0D) {
+                slide = ((double)(this.noiseSizeY - y) - topOffset) / topSize;
+                noise = MathHelper.clampedLerp(topTarget, noise, slide);
+            }
 
-        SlideConfig top = noiseConfig.getTopSlide();
-        double topTarget = top.getTarget();
-        double topSize = top.getSize();
-        double topY = this.noiseSizeY - top.getOffset();
+            if (bottomSize > 0.0D) {
+                slide = ((double) y - bottomOffset) / bottomSize;
+                noise = MathHelper.clampedLerp(bottomTarget, noise, slide);
+            }
 
-        SlideConfig bottom = noiseConfig.getBottomSlide();
-        double bottomTarget = bottom.getTarget();
-        double bottomSize = bottom.getSize();
-        double bottomY = bottom.getOffset();
+            buffer[y] = noise;
+        }
+    }
 
-        double tearNoise = this.tearNoise.get(x, z) * 20.0;
+    private double getNoiseAt(int x, int y, int z) {
+        double tearNoise = this.tearNoise.get(x, y, z) * 15.0;
         double surfaceNoise;
 
         if (tearNoise <= 0.0) {
-            surfaceNoise = this.surfaceNoise[0].get(x, z);
+            surfaceNoise = this.surfaceNoise[0].get(x, y, z);
         } else if (tearNoise >= 1.0) {
-            surfaceNoise = this.surfaceNoise[1].get(x, z);
+            surfaceNoise = this.surfaceNoise[1].get(x, y, z);
         } else {
-            double left = this.surfaceNoise[0].get(x, z);
-            double right = this.surfaceNoise[1].get(x, z);
+            double left = this.surfaceNoise[0].get(x, y, z);
+            double right = this.surfaceNoise[1].get(x, y, z);
             surfaceNoise = MathHelper.lerp(tearNoise, left, right);
         }
 
-        // Depth factor is from [0.88; 1.12]
-        double depthFactor = 1 + (surfaceNoise * 0.12);
-
-        // map from [-1; 1] to [-0.4; 1]
-        surfaceNoise = (surfaceNoise + 0.6) / 1.6;
-
-        // [-0.4; 1] to [-0.4; 0.8]
-        if (surfaceNoise > 0) {
-            surfaceNoise *= 0.8;
-        }
-
-        double surfaceY = (surfaceNoise * scale) + (depth * depthFactor);
-
-        for (int y = 0; y <= this.noiseSizeY; y++) {
-            double surfaceDepth = ((double) y / this.noiseSizeY) - surfaceY;
-            if (surfaceDepth < 0.0) {
-                surfaceDepth *= 4.0;
-            }
-
-            double density = -surfaceDepth;
-
-            if (topSize > 0.0) {
-                double delta = (topY - y) / topSize;
-                density = MathHelper.clampedLerp(topTarget, density, delta);
-            }
-
-            if (bottomSize > 0.0) {
-                double delta = (y - bottomY) / bottomSize;
-                density = MathHelper.clampedLerp(bottomTarget, density, delta);
-            }
-
-            buffer[y] = density;
-        }
+        return surfaceNoise * 200;
     }
 
     static class SurfaceParameters {
