@@ -37,13 +37,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private static final int NOISE_RES_XZ = 1;
     private static final int NOISE_RES_Y = 2;
 
-    private static final float DEPTH_SCALE = 16.0F;
-    private static final float DEPTH_OFFSET = 54.0F;
-
     private final Noise[] surfaceNoise;
     private final Noise tearNoise;
-
-    private final SurfaceParameters surfaceParameters = new SurfaceParameters();
 
     public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, ChunkGeneratorType generatorType) {
         super(biomes, seed, generatorType);
@@ -124,7 +119,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         return field_24775[idx];
     }
 
-    private SurfaceParameters sampleSurfaceParameters(int x, int z) {
+    private double[] sampleSurfaceParameters(int x, int z) {
         float totalScale = 0.0F;
         float totalDepth = 0.0F;
         float totalWeight = 0.0F;
@@ -152,18 +147,15 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         float depth = totalDepth / totalWeight;
         float scale = totalScale / totalWeight;
 
-        this.surfaceParameters.depth = (depth * 0.5F) - 0.125F;
-        this.surfaceParameters.scale = (scale * 0.9F) + 0.1F;
-
-        return this.surfaceParameters;
+        return new double[]{(depth * 0.5F) - 0.125F, (scale * 0.9F) + 0.1F};
     }
 
     @Override
     protected void sampleNoiseColumn(double[] buffer, int x, int z) {
         NoiseConfig noiseConfig = this.field_24774.method_28559();
-        SurfaceParameters params = sampleSurfaceParameters(x, z);
-        double scaledDepth = params.depth * 0.265625D;
-        double scaledScale = 96.0D / params.scale;
+        double[] params = sampleSurfaceParameters(x, z);
+        double scaledDepth = params[0] * 0.265625D;
+        double scaledScale = 96.0D / params[1];
 
         double topTarget = noiseConfig.getTopSlide().getTarget();
         double topSize = noiseConfig.getTopSlide().getSize();
@@ -216,10 +208,5 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         }
 
         return surfaceNoise * 200;
-    }
-
-    static class SurfaceParameters {
-        float depth;
-        float scale;
     }
 }

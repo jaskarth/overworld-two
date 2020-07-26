@@ -24,8 +24,6 @@ public class MixinOreFeature {
     private static final float PI = (float) Math.PI;
     private static final int MAX_SLOPE = 4;
 
-    private final BlockCanvas canvas = new BlockCanvas();
-
     @Inject(method = "generate", at = @At("HEAD"), cancellable = true)
     public void generate(
             ServerWorldAccess world, StructureAccessor structures, ChunkGenerator generator,
@@ -86,7 +84,7 @@ public class MixinOreFeature {
             int minX, int minY, int minZ,
             int width, int height
     ) {
-        try (BlockCanvas canvas = this.canvas.open(world, minX, minY, minZ, width, height, width)) {
+        try (BlockCanvas canvas = BlockCanvas.open(world, minX, minY, minZ, width, height, width)) {
             canvas.setBrush(BlockBrush.ofWhere(config.state, config.target.getCondition()));
 
             int blockCount = 0;
