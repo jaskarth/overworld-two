@@ -5,8 +5,6 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "MixinDecorator",
-    "MixinMultiNoiseBiomeSource",
-    "MixinNetherrackReplaceBlobsFeature",
     "MixinOreFeature",
     "MixinSurfaceChunkGenerator",
     "decorator.MixinChanceHeightmapDecorator",
