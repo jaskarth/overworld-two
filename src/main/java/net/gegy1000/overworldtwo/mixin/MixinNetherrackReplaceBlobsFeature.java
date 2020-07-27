@@ -1,5 +1,7 @@
 package net.gegy1000.overworldtwo.mixin;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -56,14 +58,10 @@ public abstract class MixinNetherrackReplaceBlobsFeature {
 			return false;
 		} else {
 			// If the start position is not null, then generate the blob.
-
-			// Generate size and max entent
-			Vec3i size = method_27108(random, config);
-			int maxExtent = Math.max(size.getX(), Math.max(size.getY(), size.getZ()));
 			boolean didPlace = false;
 
-			// Get the delta positions
-			List<BlockPos> deltas = getDeltas(size);
+			// Get the delta positions from size
+			List<BlockPos> deltas = getDeltas(method_27108(random, config));
 
 			// Use a mutable to reduce blockpos creation
 			BlockPos.Mutable mutable = new BlockPos.Mutable();
@@ -72,11 +70,6 @@ public abstract class MixinNetherrackReplaceBlobsFeature {
 			for (BlockPos delta : deltas) {
 				// Add the delta to the start position
 				mutable.set(startPos, delta.getX(), delta.getY(), delta.getZ());
-
-				// If the distance is greater than the max extent, break
-				if (mutable.getManhattanDistance(startPos) > maxExtent) {
-					break;
-				}
 
 				// If the block here is the target, replace with the state
 				BlockState hereState = world.getBlockState(mutable);
@@ -102,8 +95,19 @@ public abstract class MixinNetherrackReplaceBlobsFeature {
 
 		// Cache miss, compute and store
 
-		// Do note that this list is full of mutables so be very wary of modifying the positions.
-		deltas = ImmutableList.copyOf(BlockPos.iterateOutwards(new BlockPos(0, 0, 0), size.getX(), size.getY(), size.getZ()));
+		int maxExtent = Math.max(size.getX(), Math.max(size.getY(), size.getZ()));
+
+		// Iterate outwards and add the deltas that are within the max extent
+		deltas = new ArrayList<>();
+		for (BlockPos pos : BlockPos.iterateOutwards(BlockPos.ORIGIN, size.getX(), size.getY(), size.getZ())) {
+			// move to immutable and calculate if it's within the max extent
+			BlockPos delta = pos.toImmutable();
+
+			if (!(delta.getManhattanDistance(BlockPos.ORIGIN) > maxExtent)) {
+				deltas.add(delta);
+			}
+		}
+
 		DELTA_CACHE.put(packed, deltas);
 
 		return deltas;
