@@ -7,7 +7,7 @@
   "description": "A replacement for the vanilla world generator that sacrifices parity for performance",
   "authors": ["gegy1000"],
 
-  "license": "MIT",
+  "license": "LGPLv3",
 
   "environment": "*",
   "entrypoints": {
