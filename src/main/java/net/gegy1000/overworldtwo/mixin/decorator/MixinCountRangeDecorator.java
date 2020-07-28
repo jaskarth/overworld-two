@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 
 @Mixin(CountRangeDecorator.class)
 public class MixinCountRangeDecorator {
-    private final DecoratorStream<RangeDecoratorConfig> stream = new CountRangeStream();
+    private final DecoratorStream<RangeDecoratorConfig> stream = new CountRangeStream((config, random) -> random.nextInt(config.maximum - config.topOffset) + config.bottomOffset);
 
     /**
      * @reason replace with non-allocating stream

@@ -1,4 +1,4 @@
-package net.gegy1000.overworldtwo;
+package net.gegy1000.overworldtwo.util;
 
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;

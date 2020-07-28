@@ -1,7 +1,7 @@
 package net.gegy1000.overworldtwo.mixin;
 
-import net.gegy1000.overworldtwo.BlockBrush;
-import net.gegy1000.overworldtwo.BlockCanvas;
+import net.gegy1000.overworldtwo.util.BlockBrush;
+import net.gegy1000.overworldtwo.util.BlockCanvas;
 import net.gegy1000.overworldtwo.generator.OverworldTwoChunkGenerator;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;

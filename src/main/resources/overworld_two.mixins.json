@@ -9,6 +9,7 @@
     "MixinSurfaceChunkGenerator",
     "decorator.MixinChanceHeightmapDecorator",
     "decorator.MixinChanceHeightmapDoubleDecorator",
+    "decorator.MixinCountBiasedRangeDecorator",
     "decorator.MixinCountExtraHeightmapDecorator",
     "decorator.MixinCountHeight64Decorator",
     "decorator.MixinCountHeightmap32Decorator",
@@ -16,6 +17,7 @@
     "decorator.MixinCountHeightmapDoubleDecorator",
     "decorator.MixinCountRangeDecorator",
     "decorator.MixinCountTopSolidDecorator",
+    "decorator.MixinCountVeryBiasedRangeDecorator",
     "decorator.MixinNoiseHeightmap32Decorator",
     "decorator.MixinNoiseHeightmapDoubleDecorator"
   ],
