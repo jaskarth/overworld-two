@@ -2,6 +2,7 @@ accessWidener v1 named
 
 extendable class net/minecraft/world/gen/chunk/SurfaceChunkGenerator
 extendable method net/minecraft/world/gen/chunk/SurfaceChunkGenerator sampleNoiseColumn ([DII)V
+extendable method net/minecraft/world/gen/chunk/SurfaceChunkGenerator method_28553 (II)D
 
 accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24778 J
 accessible field net/minecraft/world/gen/chunk/SurfaceChunkGenerator field_24774 Lnet/minecraft/world/gen/chunk/ChunkGeneratorType;

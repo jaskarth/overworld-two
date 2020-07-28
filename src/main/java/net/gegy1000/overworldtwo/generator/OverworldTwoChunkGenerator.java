@@ -30,25 +30,19 @@ import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     public static final ChunkGeneratorType TYPE = createGeneratorType();
 
-    public static final Codec<OverworldTwoChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> {
-        return instance.group(
-                BiomeSource.field_24713.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
-                Codec.LONG.fieldOf("seed").stable().forGetter(generator -> generator.field_24778),
-                ChunkGeneratorType.field_24781.fieldOf("settings").forGetter(generator -> generator.field_24774)
-        ).apply(instance, instance.stable(OverworldTwoChunkGenerator::new));
-    });
+    public static final Codec<OverworldTwoChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            BiomeSource.field_24713.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
+            Codec.LONG.fieldOf("seed").stable().forGetter(generator -> generator.field_24778),
+            ChunkGeneratorType.field_24781.fieldOf("settings").forGetter(generator -> generator.field_24774)
+    ).apply(instance, instance.stable(OverworldTwoChunkGenerator::new)));
 
     private static final int NOISE_RES_XZ = 1;
     private static final int NOISE_RES_Y = 2;
 
-    private static final float DEPTH_SCALE = 16.0F;
-    private static final float DEPTH_OFFSET = 54.0F;
-
     private final Noise[] surfaceNoise;
     private final Noise tearNoise;
-
-    private final SurfaceParameters surfaceParameters = new SurfaceParameters();
     private final ThreadLocal<BiomeCache> biomeCache;
+    private final Noise extraDensityNoise;
 
     public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, ChunkGeneratorType generatorType) {
         super(biomes, seed, generatorType);
@@ -61,6 +55,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 surfaceNoise.create(random.nextLong()),
         };
 
+        this.extraDensityNoise = extraDensityNoise().create(random.nextLong());
+
         NoiseFactory tearNoise = tearNoise();
         this.tearNoise = tearNoise.create(random.nextLong());
 
@@ -69,11 +65,22 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
     private static NoiseFactory surfaceNoise() {
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setFrequency(1.0 / 20.0)
-                .setLacunarity(1.6)
-                .setPersistence(1.0 / 1.5);
+                .setFrequency(1.0 / 22.0)
+                .setLacunarity(1.7)
+                .setPersistence(1.0 / 1.8);
 
         octaves.add(PerlinNoise.create(), 6);
+
+        return NormalizedNoise.of(octaves.build());
+    }
+
+    private static NoiseFactory extraDensityNoise() {
+        OctaveNoise.Builder octaves = OctaveNoise.builder()
+                .setFrequency(1.0 / 150.0)
+                .setLacunarity(1.4)
+                .setPersistence(1.0 / 1.4);
+
+        octaves.add(PerlinNoise.create(), 4);
 
         return NormalizedNoise.of(octaves.build());
     }
@@ -160,82 +167,89 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         float depth = totalDepth / totalWeight;
         float scale = totalScale / totalWeight;
 
-        this.surfaceParameters.depth = depth;
-        this.surfaceParameters.scale = (scale * 0.9F) + 0.1F;
-
-        return this.surfaceParameters;
+        return new SurfaceParameters((depth * 0.5F) - 0.125F, (scale * 0.9F) + 0.1F);
     }
 
     @Override
     protected void sampleNoiseColumn(double[] buffer, int x, int z) {
         NoiseConfig noiseConfig = this.field_24774.method_28559();
+        SurfaceParameters params = sampleSurfaceParameters(x, z);
+        double scaledDepth = params.depth * 0.265625D;
+        double scaledScale = 96.0D / params.scale;
 
-        SurfaceParameters surface = this.sampleSurfaceParameters(x, z);
+        double topTarget = noiseConfig.getTopSlide().getTarget();
+        double topSize = noiseConfig.getTopSlide().getSize();
+        double topOffset = noiseConfig.getTopSlide().getOffset();
+        double bottomTarget = noiseConfig.getBottomSlide().getTarget();
+        double bottomSize = noiseConfig.getBottomSlide().getSize();
+        double bottomOffset = noiseConfig.getBottomSlide().getOffset();
+        double randomDensityOffset = noiseConfig.hasRandomDensityOffset() ? this.extraDensityNoiseAt(x, z) : 0.0D;
+        double densityFactor = noiseConfig.getDensityFactor();
+        double densityOffset = noiseConfig.getDensityOffset();
 
-        float depth = (surface.depth * DEPTH_SCALE + DEPTH_OFFSET) / 256.0F;
-        float scale = surface.scale / 1.9F;
-
-        SlideConfig top = noiseConfig.getTopSlide();
-        double topTarget = top.getTarget();
-        double topSize = top.getSize();
-        double topY = this.noiseSizeY - top.getOffset();
-
-        SlideConfig bottom = noiseConfig.getBottomSlide();
-        double bottomTarget = bottom.getTarget();
-        double bottomSize = bottom.getSize();
-        double bottomY = bottom.getOffset();
-
-        double tearNoise = this.tearNoise.get(x, z) * 20.0;
-        double surfaceNoise;
-
-        if (tearNoise <= 0.0) {
-            surfaceNoise = this.surfaceNoise[0].get(x, z);
-        } else if (tearNoise >= 1.0) {
-            surfaceNoise = this.surfaceNoise[1].get(x, z);
-        } else {
-            double left = this.surfaceNoise[0].get(x, z);
-            double right = this.surfaceNoise[1].get(x, z);
-            surfaceNoise = MathHelper.lerp(tearNoise, left, right);
-        }
-
-        // Depth factor is from [0.88; 1.12]
-        double depthFactor = 1 + (surfaceNoise * 0.12);
-
-        // map from [-1; 1] to [-0.4; 1]
-        surfaceNoise = (surfaceNoise + 0.6) / 1.6;
-
-        // [-0.4; 1] to [-0.4; 0.8]
-        if (surfaceNoise > 0) {
-            surfaceNoise *= 0.8;
-        }
-
-        double surfaceY = (surfaceNoise * scale) + (depth * depthFactor);
-
-        for (int y = 0; y <= this.noiseSizeY; y++) {
-            double surfaceDepth = ((double) y / this.noiseSizeY) - surfaceY;
-            if (surfaceDepth < 0.0) {
-                surfaceDepth *= 4.0;
+        for(int y = 0; y <= this.noiseSizeY; ++y) {
+            double noise = this.getNoiseAt(x, y, z);
+            double yOffset = 1.0D - (double) y * 2.0D / (double)this.noiseSizeY + randomDensityOffset;
+            double density = yOffset * densityFactor + densityOffset;
+            double falloff = (density + scaledDepth) * scaledScale;
+            if (falloff > 0.0D) {
+                noise += falloff * 4.0D;
+            } else {
+                noise += falloff;
+            }
+            double slide;
+            if (topSize > 0.0D) {
+                slide = ((double)(this.noiseSizeY - y) - topOffset) / topSize;
+                noise = MathHelper.clampedLerp(topTarget, noise, slide);
             }
 
-            double density = -surfaceDepth;
-
-            if (topSize > 0.0) {
-                double delta = (topY - y) / topSize;
-                density = MathHelper.clampedLerp(topTarget, density, delta);
+            if (bottomSize > 0.0D) {
+                slide = ((double) y - bottomOffset) / bottomSize;
+                noise = MathHelper.clampedLerp(bottomTarget, noise, slide);
             }
 
-            if (bottomSize > 0.0) {
-                double delta = (y - bottomY) / bottomSize;
-                density = MathHelper.clampedLerp(bottomTarget, density, delta);
-            }
-
-            buffer[y] = density;
+            buffer[y] = noise;
         }
     }
 
-    static class SurfaceParameters {
-        float depth;
-        float scale;
+    private double getNoiseAt(int x, int y, int z) {
+        double tearNoise = this.tearNoise.get(x, y, z) * 15.0;
+        double surfaceNoise;
+
+        if (tearNoise <= 0.0) {
+            surfaceNoise = this.surfaceNoise[0].get(x, y, z);
+        } else if (tearNoise >= 1.0) {
+            surfaceNoise = this.surfaceNoise[1].get(x, y, z);
+        } else {
+            double left = this.surfaceNoise[0].get(x, y, z);
+            double right = this.surfaceNoise[1].get(x, y, z);
+            surfaceNoise = MathHelper.lerp(tearNoise, left, right);
+        }
+
+        return surfaceNoise * 200;
+    }
+
+    protected double extraDensityNoiseAt(int x, int z) {
+        double rawDensity = this.extraDensityNoise.get(x, 10.0D, z);
+        double scaledDensity;
+        if (rawDensity < 0.0D) {
+            scaledDensity = -rawDensity * 0.3D;
+        } else {
+            scaledDensity = rawDensity;
+        }
+
+        double finalDensity = scaledDensity * 24.575625D - 2.0D;
+        return finalDensity < 0.0D ? finalDensity * 0.009486607142857142D : Math.min(finalDensity, 1.0D) * 0.006640625D;
+    }
+
+    private static class SurfaceParameters {
+        private final float depth;
+        private final float scale;
+
+        public SurfaceParameters(float depth, float scale) {
+            this.depth = depth;
+            this.scale = scale;
+        }
     }
 
     static class BiomeCache {
