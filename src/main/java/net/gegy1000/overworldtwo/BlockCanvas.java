@@ -13,12 +13,12 @@ public final class BlockCanvas implements AutoCloseable {
 
     private WorldAccess world;
 
-    private int minX;
-    private int minY;
-    private int minZ;
-    private int sizeX;
-    private int sizeY;
-    private int sizeZ;
+    private final int minX;
+    private final int minY;
+    private final int minZ;
+    private final int sizeX;
+    private final int sizeY;
+    private final int sizeZ;
 
     private BitSet mask;
 
@@ -26,11 +26,7 @@ public final class BlockCanvas implements AutoCloseable {
 
     private final BlockPos.Mutable mutable = new BlockPos.Mutable();
 
-    public BlockCanvas open(WorldAccess world, int minX, int minY, int minZ, int sizeX, int sizeY, int sizeZ) {
-        if (this.world != null) {
-            throw new IllegalStateException("canvas already open!");
-        }
-
+    public BlockCanvas(WorldAccess world, int minX, int minY, int minZ, int sizeX, int sizeY, int sizeZ, BitSet mask, BlockBrush brush) {
         this.world = world;
         this.minX = minX;
         this.minY = minY;
@@ -38,12 +34,12 @@ public final class BlockCanvas implements AutoCloseable {
         this.sizeX = sizeX;
         this.sizeY = sizeY;
         this.sizeZ = sizeZ;
+        this.mask = mask;
+        this.brush = brush;
+    }
 
-        this.brush = NO_BRUSH;
-
-        this.mask = new BitSet(sizeX * sizeY * sizeZ);
-
-        return this;
+    public static BlockCanvas open(WorldAccess world, int minX, int minY, int minZ, int sizeX, int sizeY, int sizeZ) {
+        return new BlockCanvas(world, minX, minY, minZ, sizeX, sizeY, sizeZ, new BitSet(sizeX * sizeY * sizeZ), NO_BRUSH);
     }
 
     public void setBrush(BlockBrush brush) {
