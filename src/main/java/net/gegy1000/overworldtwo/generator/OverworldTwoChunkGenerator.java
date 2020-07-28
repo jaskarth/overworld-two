@@ -1,7 +1,10 @@
 package net.gegy1000.overworldtwo.generator;
 
+import java.util.Arrays;
+
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import it.unimi.dsi.fastutil.HashCommon;
 import net.gegy1000.overworldtwo.OverworldTwo;
 import net.gegy1000.overworldtwo.noise.Noise;
 import net.gegy1000.overworldtwo.noise.NoiseFactory;
@@ -10,6 +13,7 @@ import net.gegy1000.overworldtwo.noise.OctaveNoise;
 import net.gegy1000.overworldtwo.noise.PerlinNoise;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.biome.Biome;
@@ -44,6 +48,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private final Noise tearNoise;
 
     private final SurfaceParameters surfaceParameters = new SurfaceParameters();
+    private final ThreadLocal<BiomeCache> biomeCache;
 
     public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, ChunkGeneratorType generatorType) {
         super(biomes, seed, generatorType);
@@ -58,6 +63,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
         NoiseFactory tearNoise = tearNoise();
         this.tearNoise = tearNoise.create(random.nextLong());
+
+        this.biomeCache = ThreadLocal.withInitial(() -> new BiomeCache(128, biomes));
     }
 
     private static NoiseFactory surfaceNoise() {
@@ -125,16 +132,17 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     }
 
     private SurfaceParameters sampleSurfaceParameters(int x, int z) {
+        BiomeCache cache = biomeCache.get();
+
         float totalScale = 0.0F;
         float totalDepth = 0.0F;
         float totalWeight = 0.0F;
 
-        int seaLevel = this.getSeaLevel();
-        float depthHere = this.biomeSource.getBiomeForNoiseGen(x, seaLevel, z).getDepth();
+        float depthHere = cache.get(x, z).getDepth();
 
         for (int oz = -2; oz <= 2; oz++) {
             for (int ox = -2; ox <= 2; ox++) {
-                Biome biome = this.biomeSource.getBiomeForNoiseGen(x + ox, seaLevel, z + oz);
+                Biome biome = cache.get(x + ox, z + oz);
                 float depth = biome.getDepth();
                 float scale = biome.getScale();
 
@@ -166,12 +174,6 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
         float depth = (surface.depth * DEPTH_SCALE + DEPTH_OFFSET) / 256.0F;
         float scale = surface.scale / 1.9F;
-
-        NoiseSamplingConfig sampling = noiseConfig.getSampling();
-        double xzScale = 684.412 * sampling.getXZScale();
-        double yScale = 684.412 * sampling.getYScale();
-        double xzFactor = xzScale / sampling.getXZFactor();
-        double yFactor = yScale / sampling.getYFactor();
 
         SlideConfig top = noiseConfig.getTopSlide();
         double topTarget = top.getTarget();
@@ -234,5 +236,48 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     static class SurfaceParameters {
         float depth;
         float scale;
+    }
+
+    static class BiomeCache {
+        private final long[] keys;
+        private final Biome[] values;
+
+        private final int mask;
+        private final BiomeSource source;
+
+        private BiomeCache(int size, BiomeSource source) {
+            this.source = source;
+            size = MathHelper.smallestEncompassingPowerOfTwo(size);
+            this.mask = size - 1;
+
+            this.keys = new long[size];
+            Arrays.fill(this.keys, Long.MIN_VALUE);
+            this.values = new Biome[size];
+        }
+
+        public Biome get(int x, int z) {
+            long key = key(x, z);
+            int idx = hash(key) & this.mask;
+
+            // if the entry here has a key that matches ours, we have a cache hit
+            if (this.keys[idx] == key) {
+                return this.values[idx];
+            }
+
+            // cache miss: sample the source and put the result into our cache entry
+            Biome sampled = source.getBiomeForNoiseGen(x, 0, z);
+            this.values[idx] = sampled;
+            this.keys[idx] = key;
+
+            return sampled;
+        }
+
+        private static int hash(long key) {
+            return (int) HashCommon.mix(key);
+        }
+
+        private static long key(int x, int z) {
+            return ChunkPos.toLong(x, z);
+        }
     }
 }
