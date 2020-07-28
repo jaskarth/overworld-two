@@ -39,6 +39,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
     private final Noise[] surfaceNoise;
     private final Noise tearNoise;
+    private final Noise extraDensityNoise;
 
     public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, ChunkGeneratorType generatorType) {
         super(biomes, seed, generatorType);
@@ -51,6 +52,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 surfaceNoise.create(random.nextLong()),
         };
 
+        this.extraDensityNoise = extraDensityNoise().create(random.nextLong());
+
         NoiseFactory tearNoise = tearNoise();
         this.tearNoise = tearNoise.create(random.nextLong());
     }
@@ -62,6 +65,17 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 .setPersistence(1.0 / 1.8);
 
         octaves.add(PerlinNoise.create(), 6);
+
+        return NormalizedNoise.of(octaves.build());
+    }
+
+    private static NoiseFactory extraDensityNoise() {
+        OctaveNoise.Builder octaves = OctaveNoise.builder()
+                .setFrequency(1.0 / 150.0)
+                .setLacunarity(1.4)
+                .setPersistence(1.0 / 1.4);
+
+        octaves.add(PerlinNoise.create(), 4);
 
         return NormalizedNoise.of(octaves.build());
     }
@@ -163,7 +177,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         double bottomTarget = noiseConfig.getBottomSlide().getTarget();
         double bottomSize = noiseConfig.getBottomSlide().getSize();
         double bottomOffset = noiseConfig.getBottomSlide().getOffset();
-        double randomDensityOffset = noiseConfig.hasRandomDensityOffset() ? this.method_28553(x, z) : 0.0D;
+        double randomDensityOffset = noiseConfig.hasRandomDensityOffset() ? this.extraDensityNoiseAt(x, z) : 0.0D;
         double densityFactor = noiseConfig.getDensityFactor();
         double densityOffset = noiseConfig.getDensityOffset();
 
@@ -208,5 +222,18 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         }
 
         return surfaceNoise * 200;
+    }
+
+    protected double extraDensityNoiseAt(int x, int z) {
+        double rawDensity = this.extraDensityNoise.get(x, 10.0D, z);
+        double scaledDensity;
+        if (rawDensity < 0.0D) {
+            scaledDensity = -rawDensity * 0.3D;
+        } else {
+            scaledDensity = rawDensity;
+        }
+
+        double finalDensity = scaledDensity * 24.575625D - 2.0D;
+        return finalDensity < 0.0D ? finalDensity * 0.009486607142857142D : Math.min(finalDensity, 1.0D) * 0.006640625D;
     }
 }
