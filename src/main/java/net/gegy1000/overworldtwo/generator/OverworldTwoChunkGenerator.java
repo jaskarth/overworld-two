@@ -133,7 +133,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         return field_24775[idx];
     }
 
-    private double[] sampleSurfaceParameters(int x, int z) {
+    private SurfaceParameters sampleSurfaceParameters(int x, int z) {
         float totalScale = 0.0F;
         float totalDepth = 0.0F;
         float totalWeight = 0.0F;
@@ -161,15 +161,15 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         float depth = totalDepth / totalWeight;
         float scale = totalScale / totalWeight;
 
-        return new double[]{(depth * 0.5F) - 0.125F, (scale * 0.9F) + 0.1F};
+        return new SurfaceParameters((depth * 0.5F) - 0.125F, (scale * 0.9F) + 0.1F);
     }
 
     @Override
     protected void sampleNoiseColumn(double[] buffer, int x, int z) {
         NoiseConfig noiseConfig = this.field_24774.method_28559();
-        double[] params = sampleSurfaceParameters(x, z);
-        double scaledDepth = params[0] * 0.265625D;
-        double scaledScale = 96.0D / params[1];
+        SurfaceParameters params = sampleSurfaceParameters(x, z);
+        double scaledDepth = params.depth * 0.265625D;
+        double scaledScale = 96.0D / params.scale;
 
         double topTarget = noiseConfig.getTopSlide().getTarget();
         double topSize = noiseConfig.getTopSlide().getSize();
@@ -235,5 +235,15 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
         double finalDensity = scaledDensity * 24.575625D - 2.0D;
         return finalDensity < 0.0D ? finalDensity * 0.009486607142857142D : Math.min(finalDensity, 1.0D) * 0.006640625D;
+    }
+
+    private static class SurfaceParameters {
+        private final float depth;
+        private final float scale;
+
+        public SurfaceParameters(float depth, float scale) {
+            this.depth = depth;
+            this.scale = scale;
+        }
     }
 }
