@@ -23,7 +23,7 @@ public final class CountRangeStream extends DecoratorStream<RangeDecoratorConfig
 
     @Override
     protected boolean next(BlockPos.Mutable output, WorldAccess world, ChunkGenerator generator, Random random, RangeDecoratorConfig config, BlockPos origin) {
-        if (++this.count >= config.count) {
+        if (++this.count > config.count) {
             return false;
         }
 

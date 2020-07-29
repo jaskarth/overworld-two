@@ -22,7 +22,7 @@ public final class CountAtYStream extends DecoratorStream<CountDecoratorConfig> 
 
     @Override
     protected boolean next(BlockPos.Mutable output, WorldAccess world, ChunkGenerator generator, Random random, CountDecoratorConfig config, BlockPos origin) {
-        if (++this.count >= config.count) {
+        if (++this.count > config.count) {
             return false;
         }
 

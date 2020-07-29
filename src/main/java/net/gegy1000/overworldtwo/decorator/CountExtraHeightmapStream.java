@@ -33,7 +33,7 @@ public final class CountExtraHeightmapStream extends DecoratorStream<CountExtraC
             }
         }
 
-        if (++this.count >= this.totalCount) {
+        if (++this.count > this.totalCount) {
             return false;
         }
 
