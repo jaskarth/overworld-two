@@ -13,6 +13,8 @@ public class MixinDimensionType {
 
 	/**
 	 * @reason nether-two :D
+	 * TODO: only run when the overworld is overworld-two
+	 *
 	 * @author SuperCoder79
 	 */
 	@Overwrite

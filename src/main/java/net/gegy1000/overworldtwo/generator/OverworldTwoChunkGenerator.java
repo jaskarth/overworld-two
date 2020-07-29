@@ -55,7 +55,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
         ChunkRandom random = new ChunkRandom(seed);
 
-        NoiseFactory surfaceNoise = surfaceNoise();
+        NoiseFactory surfaceNoise = surfaceNoise(generatorType);
         this.surfaceNoise = new Noise[] {
                 surfaceNoise.create(random.nextLong()),
                 surfaceNoise.create(random.nextLong()),
@@ -63,15 +63,18 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
         this.extraDensityNoise = extraDensityNoise().create(random.nextLong());
 
-        NoiseFactory tearNoise = tearNoise();
+        NoiseFactory tearNoise = tearNoise(generatorType);
         this.tearNoise = tearNoise.create(random.nextLong());
 
         this.biomeCache = ThreadLocal.withInitial(() -> new BiomeCache(128, biomes));
     }
 
-    private static NoiseFactory surfaceNoise() {
+    private static NoiseFactory surfaceNoise(ChunkGeneratorType type) {
+        NoiseSamplingConfig config = type.method_28559().getSampling();
+
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setFrequency(1.0 / 22.0)
+                .setHorizontalFrequency(1.0 / (22.0 * config.getXZScale()))
+                .setVerticalFrequency(1.0 / (22.0 * config.getYScale()))
                 .setLacunarity(1.7)
                 .setPersistence(1.0 / 1.8);
 
@@ -80,22 +83,26 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         return NormalizedNoise.of(octaves.build());
     }
 
-    private static NoiseFactory extraDensityNoise() {
+    private static NoiseFactory tearNoise(ChunkGeneratorType type) {
+        NoiseSamplingConfig config = type.method_28559().getSampling();
+
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setFrequency(1.0 / 150.0)
-                .setLacunarity(1.4)
-                .setPersistence(1.0 / 1.4);
+                .setHorizontalFrequency(1.0 / (config.getXZFactor()))
+                .setVerticalFrequency(1.0 / (config.getYFactor()))
+                .setLacunarity(1.35)
+                .setPersistence(1.0 / 2.0);
 
         octaves.add(PerlinNoise.create(), 4);
 
         return NormalizedNoise.of(octaves.build());
     }
 
-    private static NoiseFactory tearNoise() {
+    private static NoiseFactory extraDensityNoise() {
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setFrequency(1.0 / 24.0)
-                .setLacunarity(1.35)
-                .setPersistence(1.0 / 2.0);
+                .setHorizontalFrequency(1.0 / 150.0)
+                .setVerticalFrequency(1.0 / 150.0)
+                .setLacunarity(1.4)
+                .setPersistence(1.0 / 1.4);
 
         octaves.add(PerlinNoise.create(), 4);
 
@@ -110,7 +117,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private static ChunkGeneratorType createOverworld() {
         StructuresConfig structures = new StructuresConfig(true);
 
-        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(1.0, 1.0, 80.0, 40.0);
+        // Vanilla: 1.0, 1.0, 40.0, 22.0
+        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(1.0, 1.0, 40.0, 24.0);
         NoiseConfig noise = new NoiseConfig(
                 256,
                 noiseSampler,
@@ -139,7 +147,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         Map<StructureFeature<?>, StructureConfig> map = Maps.newHashMap(StructuresConfig.DEFAULT_STRUCTURES);
         map.put(StructureFeature.RUINED_PORTAL, new StructureConfig(25, 10, 34222645));
 
-        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(1.0D, 3.0D, 80.0D, 60.0D);
+        // Vanilla: 1.0, 3.0, 80.0, 60.0
+        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(2.0, 0.75, 120.0, 40.0);
         NoiseConfig noise = new NoiseConfig(
                 128,
                 noiseSampler,
@@ -147,8 +156,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 new SlideConfig(320, 4, -1),
                 1,
                 2,
-                0.0D,
-                0.019921875D,
+                0.0,
+                0.019921875,
                 false,
                 false,
                 false,

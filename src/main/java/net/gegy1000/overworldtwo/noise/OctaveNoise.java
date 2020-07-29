@@ -10,21 +10,24 @@ public final class OctaveNoise implements Noise {
     private final NoiseRange range;
 
     private final double amplitude;
-    private final double frequency;
+    private final double horizontalFrequency;
+    private final double verticalFrequency;
 
     private final double persistence;
     private final double lacunarity;
 
     OctaveNoise(
             Noise[] layers, NoiseRange range,
-            double amplitude, double frequency,
-            double persistence, double lacunarity
+            double amplitude, double horizontalFrequency,
+            double verticalFrequency, double persistence,
+            double lacunarity
     ) {
         this.layers = layers;
         this.range = range;
 
         this.amplitude = amplitude;
-        this.frequency = frequency;
+        this.horizontalFrequency = horizontalFrequency;
+        this.verticalFrequency = verticalFrequency;
         this.persistence = persistence;
         this.lacunarity = lacunarity;
     }
@@ -36,15 +39,16 @@ public final class OctaveNoise implements Noise {
     @Override
     public double get(double x, double y, double z) {
         double amplitude = this.amplitude;
-        double frequency = this.frequency;
+        double horizontalFrequency = this.horizontalFrequency;
+        double verticalFrequency = this.verticalFrequency;
         double persistence = this.persistence;
         double lacunarity = this.lacunarity;
 
         double accumulator = 0.0;
 
-        x *= frequency;
-        y *= frequency;
-        z *= frequency;
+        x *= horizontalFrequency;
+        y *= verticalFrequency;
+        z *= horizontalFrequency;
 
         Noise[] layers = this.layers;
         for (int i = 0; i < layers.length; i++) {
@@ -63,14 +67,14 @@ public final class OctaveNoise implements Noise {
     @Override
     public double get(double x, double y) {
         double amplitude = this.amplitude;
-        double frequency = this.frequency;
+        double horizontalFrequency = this.horizontalFrequency;
         double persistence = this.persistence;
         double lacunarity = this.lacunarity;
 
         double accumulator = 0.0;
 
-        x *= frequency;
-        y *= frequency;
+        x *= horizontalFrequency;
+        y *= horizontalFrequency;
 
         Noise[] layers = this.layers;
         for (int i = 0; i < layers.length; i++) {
@@ -92,7 +96,8 @@ public final class OctaveNoise implements Noise {
 
     public static class Builder {
         private double amplitude = 1.0;
-        private double frequency = 1.0;
+        private double horizontalFrequency = 1.0;
+        private double verticalFrequency = 1.0;
 
         private double persistence = 1.0 / 2.0;
         private double lacunarity = 2.0;
@@ -107,8 +112,13 @@ public final class OctaveNoise implements Noise {
             return this;
         }
 
-        public Builder setFrequency(double frequency) {
-            this.frequency = frequency;
+        public Builder setHorizontalFrequency(double horizontalFrequency) {
+            this.horizontalFrequency = horizontalFrequency;
+            return this;
+        }
+
+        public Builder setVerticalFrequency(double verticalFrequency) {
+            this.verticalFrequency = verticalFrequency;
             return this;
         }
 
@@ -141,8 +151,9 @@ public final class OctaveNoise implements Noise {
 
                 return new OctaveNoise(
                         octaves, range,
-                        this.amplitude, this.frequency,
-                        this.persistence, this.lacunarity
+                        this.amplitude, this.horizontalFrequency,
+                        this.verticalFrequency, this.persistence,
+                        this.lacunarity
                 );
             };
         }
