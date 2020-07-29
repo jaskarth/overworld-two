@@ -21,6 +21,6 @@ public final class OverworldTwoGeneratorType extends GeneratorType {
     @Override
     protected ChunkGenerator method_29076(long seed) {
         VanillaLayeredBiomeSource biomes = new VanillaLayeredBiomeSource(seed, false, false);
-        return new OverworldTwoChunkGenerator(biomes, seed, OverworldTwoChunkGenerator.TYPE);
+        return new OverworldTwoChunkGenerator(biomes, seed, OverworldTwoChunkGenerator.OVERWORLD);
     }
 }

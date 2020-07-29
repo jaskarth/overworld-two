@@ -1,7 +1,10 @@
 package net.gegy1000.overworldtwo.generator;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
 
+import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.HashCommon;
@@ -24,11 +27,14 @@ import net.minecraft.world.gen.chunk.ChunkGeneratorType;
 import net.minecraft.world.gen.chunk.NoiseConfig;
 import net.minecraft.world.gen.chunk.NoiseSamplingConfig;
 import net.minecraft.world.gen.chunk.SlideConfig;
+import net.minecraft.world.gen.chunk.StructureConfig;
 import net.minecraft.world.gen.chunk.StructuresConfig;
 import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
+import net.minecraft.world.gen.feature.StructureFeature;
 
 public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
-    public static final ChunkGeneratorType TYPE = createGeneratorType();
+    public static final ChunkGeneratorType OVERWORLD = createOverworld();
+    public static final ChunkGeneratorType NETHER = createNether();
 
     public static final Codec<OverworldTwoChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BiomeSource.field_24713.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
@@ -101,7 +107,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     }
 
     // TODO: better support customization
-    private static ChunkGeneratorType createGeneratorType() {
+    private static ChunkGeneratorType createOverworld() {
         StructuresConfig structures = new StructuresConfig(true);
 
         NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(1.0, 1.0, 80.0, 40.0);
@@ -124,6 +130,37 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 Blocks.STONE.getDefaultState(),
                 Blocks.WATER.getDefaultState(),
                 -10, 0, 63,
+                false
+        );
+    }
+
+    private static ChunkGeneratorType createNether() {
+        StructuresConfig structures = new StructuresConfig(false);
+        Map<StructureFeature<?>, StructureConfig> map = Maps.newHashMap(StructuresConfig.DEFAULT_STRUCTURES);
+        map.put(StructureFeature.RUINED_PORTAL, new StructureConfig(25, 10, 34222645));
+
+        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(1.0D, 3.0D, 80.0D, 60.0D);
+        NoiseConfig noise = new NoiseConfig(
+                128,
+                noiseSampler,
+                new SlideConfig(120, 3, 0),
+                new SlideConfig(320, 4, -1),
+                1,
+                2,
+                0.0D,
+                0.019921875D,
+                false,
+                false,
+                false,
+                false
+        );
+
+        return new ChunkGeneratorType(
+                new StructuresConfig(Optional.ofNullable(structures.getStronghold()), map),
+                noise,
+                Blocks.NETHERRACK.getDefaultState(),
+                Blocks.LAVA.getDefaultState(),
+                0, 0, 32,
                 false
         );
     }

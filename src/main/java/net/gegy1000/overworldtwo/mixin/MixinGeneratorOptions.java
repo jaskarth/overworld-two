@@ -48,7 +48,7 @@ public class MixinGeneratorOptions {
             boolean generateStructures = generate_structures == null || Boolean.parseBoolean(generate_structures);
 
             // return our chunk generator
-            cir.setReturnValue(new GeneratorOptions(seed, generateStructures, false, GeneratorOptions.method_28608(dimensions, new OverworldTwoChunkGenerator(new VanillaLayeredBiomeSource(seed, false, false), seed, OverworldTwoChunkGenerator.TYPE))));
+            cir.setReturnValue(new GeneratorOptions(seed, generateStructures, false, GeneratorOptions.method_28608(dimensions, new OverworldTwoChunkGenerator(new VanillaLayeredBiomeSource(seed, false, false), seed, OverworldTwoChunkGenerator.OVERWORLD))));
         }
     }
 }
