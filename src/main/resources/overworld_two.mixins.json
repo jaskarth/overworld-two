@@ -4,7 +4,6 @@
   "package": "net.gegy1000.overworldtwo.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "MixinDecorator",
     "MixinDimensionType",
     "MixinGeneratorOptions",
     "MixinOreFeature",

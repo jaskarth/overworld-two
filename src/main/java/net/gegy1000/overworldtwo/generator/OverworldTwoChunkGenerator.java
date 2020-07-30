@@ -73,8 +73,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         NoiseSamplingConfig config = type.method_28559().getSampling();
 
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setHorizontalFrequency(1.0 / (22.0 * config.getXZScale()))
-                .setVerticalFrequency(1.0 / (22.0 * config.getYScale()))
+                .setHorizontalFrequency(1.0 / config.getXZScale())
+                .setVerticalFrequency(1.0 / config.getYScale())
                 .setLacunarity(1.7)
                 .setPersistence(1.0 / 1.8);
 
@@ -87,8 +87,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         NoiseSamplingConfig config = type.method_28559().getSampling();
 
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setHorizontalFrequency(1.0 / (config.getXZFactor()))
-                .setVerticalFrequency(1.0 / (config.getYFactor()))
+                .setHorizontalFrequency(1.0 / config.getXZFactor())
+                .setVerticalFrequency(1.0 / config.getYFactor())
                 .setLacunarity(1.35)
                 .setPersistence(1.0 / 2.0);
 
@@ -118,7 +118,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         StructuresConfig structures = new StructuresConfig(true);
 
         // Vanilla: 1.0, 1.0, 40.0, 22.0
-        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(1.0, 1.0, 40.0, 24.0);
+        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(24.0, 24.0, 40.0, 24.0);
         NoiseConfig noise = new NoiseConfig(
                 256,
                 noiseSampler,
@@ -148,7 +148,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         map.put(StructureFeature.RUINED_PORTAL, new StructureConfig(25, 10, 34222645));
 
         // Vanilla: 1.0, 3.0, 80.0, 60.0
-        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(2.0, 0.75, 120.0, 40.0);
+        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(48.0, 18.0, 120.0, 40.0);
         NoiseConfig noise = new NoiseConfig(
                 128,
                 noiseSampler,
