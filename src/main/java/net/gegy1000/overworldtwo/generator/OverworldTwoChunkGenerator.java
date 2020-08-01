@@ -120,7 +120,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         StructuresConfig structures = new StructuresConfig(true);
 
         // Vanilla: 1.0, 1.0, 40.0, 22.0
-        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(24.0, 24.0, 40.0, 24.0);
+        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(24.0, 24.0, 40.0, 18.0);
         NoiseConfig noise = new NoiseConfig(
                 256,
                 noiseSampler,
@@ -185,7 +185,8 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         return new OverworldTwoGenerationSettings(
                 type,
                 1.7, 1.8,
-                1.35, 2.0,
+                1.5, 1.75,
+                // The nether doesn't use these values
                 150, 1.5, 1.4
         );
     }
