@@ -33,13 +33,13 @@ import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 import net.minecraft.world.gen.feature.StructureFeature;
 
 public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
-    public static final ChunkGeneratorType OVERWORLD = createOverworld();
-    public static final ChunkGeneratorType NETHER = createNether();
+    public static final OverworldTwoGenerationSettings OVERWORLD = createOverworld();
+    public static final OverworldTwoGenerationSettings NETHER = createNether();
 
     public static final Codec<OverworldTwoChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BiomeSource.field_24713.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
             Codec.LONG.fieldOf("seed").stable().forGetter(generator -> generator.field_24778),
-            ChunkGeneratorType.field_24781.fieldOf("settings").forGetter(generator -> generator.field_24774)
+            OverworldTwoGenerationSettings.CODEC.fieldOf("settings").forGetter(generator -> generator.settings)
     ).apply(instance, instance.stable(OverworldTwoChunkGenerator::new)));
 
     private static final int NOISE_RES_XZ = 1;
@@ -49,60 +49,62 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private final Noise tearNoise;
     private final ThreadLocal<BiomeCache> biomeCache;
     private final Noise extraDensityNoise;
+    private final OverworldTwoGenerationSettings settings;
 
-    public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, ChunkGeneratorType generatorType) {
-        super(biomes, seed, generatorType);
+    public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, OverworldTwoGenerationSettings settings) {
+        super(biomes, seed, settings.wrapped);
+        this.settings = settings;
 
         ChunkRandom random = new ChunkRandom(seed);
 
-        NoiseFactory surfaceNoise = surfaceNoise(generatorType);
+        NoiseFactory surfaceNoise = surfaceNoise(settings);
         this.surfaceNoise = new Noise[] {
                 surfaceNoise.create(random.nextLong()),
                 surfaceNoise.create(random.nextLong()),
         };
 
-        this.extraDensityNoise = extraDensityNoise().create(random.nextLong());
+        this.extraDensityNoise = extraDensityNoise(settings).create(random.nextLong());
 
-        NoiseFactory tearNoise = tearNoise(generatorType);
+        NoiseFactory tearNoise = tearNoise(settings);
         this.tearNoise = tearNoise.create(random.nextLong());
 
         this.biomeCache = ThreadLocal.withInitial(() -> new BiomeCache(128, biomes));
     }
 
-    private static NoiseFactory surfaceNoise(ChunkGeneratorType type) {
-        NoiseSamplingConfig config = type.method_28559().getSampling();
+    private static NoiseFactory surfaceNoise(OverworldTwoGenerationSettings settings) {
+        NoiseSamplingConfig config = settings.wrapped.method_28559().getSampling();
 
         OctaveNoise.Builder octaves = OctaveNoise.builder()
                 .setHorizontalFrequency(1.0 / config.getXZScale())
                 .setVerticalFrequency(1.0 / config.getYScale())
-                .setLacunarity(1.7)
-                .setPersistence(1.0 / 1.8);
+                .setLacunarity(settings.surfaceLacunarity)
+                .setPersistence(1.0 / settings.surfacePersistence);
 
         octaves.add(PerlinNoise.create(), 6);
 
         return NormalizedNoise.of(octaves.build());
     }
 
-    private static NoiseFactory tearNoise(ChunkGeneratorType type) {
-        NoiseSamplingConfig config = type.method_28559().getSampling();
+    private static NoiseFactory tearNoise(OverworldTwoGenerationSettings settings) {
+        NoiseSamplingConfig config = settings.wrapped.method_28559().getSampling();
 
         OctaveNoise.Builder octaves = OctaveNoise.builder()
                 .setHorizontalFrequency(1.0 / config.getXZFactor())
                 .setVerticalFrequency(1.0 / config.getYFactor())
-                .setLacunarity(1.35)
-                .setPersistence(1.0 / 2.0);
+                .setLacunarity(settings.tearLacunarity)
+                .setPersistence(1.0 / settings.tearPersistence);
 
         octaves.add(PerlinNoise.create(), 4);
 
         return NormalizedNoise.of(octaves.build());
     }
 
-    private static NoiseFactory extraDensityNoise() {
+    private static NoiseFactory extraDensityNoise(OverworldTwoGenerationSettings settings) {
         OctaveNoise.Builder octaves = OctaveNoise.builder()
-                .setHorizontalFrequency(1.0 / 150.0)
-                .setVerticalFrequency(1.0 / 150.0)
-                .setLacunarity(1.4)
-                .setPersistence(1.0 / 1.4);
+                .setHorizontalFrequency(1.0 / settings.extraDensityScale)
+                .setVerticalFrequency(1.0 / settings.extraDensityScale)
+                .setLacunarity(settings.extraDensityLacunarity)
+                .setPersistence(1.0 / settings.extraDensityPersistence);
 
         octaves.add(PerlinNoise.create(), 4);
 
@@ -114,7 +116,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     }
 
     // TODO: better support customization
-    private static ChunkGeneratorType createOverworld() {
+    private static OverworldTwoGenerationSettings createOverworld() {
         StructuresConfig structures = new StructuresConfig(true);
 
         // Vanilla: 1.0, 1.0, 40.0, 22.0
@@ -133,16 +135,23 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 false
         );
 
-        return new ChunkGeneratorType(
+        ChunkGeneratorType type =  new ChunkGeneratorType(
                 structures, noise,
                 Blocks.STONE.getDefaultState(),
                 Blocks.WATER.getDefaultState(),
                 -10, 0, 63,
                 false
         );
+
+        return new OverworldTwoGenerationSettings(
+                type,
+                1.7, 1.8,
+                1.35, 2.0,
+                150, 1.5, 1.4
+        );
     }
 
-    private static ChunkGeneratorType createNether() {
+    private static OverworldTwoGenerationSettings createNether() {
         StructuresConfig structures = new StructuresConfig(false);
         Map<StructureFeature<?>, StructureConfig> map = Maps.newHashMap(StructuresConfig.DEFAULT_STRUCTURES);
         map.put(StructureFeature.RUINED_PORTAL, new StructureConfig(25, 10, 34222645));
@@ -164,13 +173,20 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 false
         );
 
-        return new ChunkGeneratorType(
+        ChunkGeneratorType type = new ChunkGeneratorType(
                 new StructuresConfig(Optional.ofNullable(structures.getStronghold()), map),
                 noise,
                 Blocks.NETHERRACK.getDefaultState(),
                 Blocks.LAVA.getDefaultState(),
                 0, 0, 32,
                 false
+        );
+
+        return new OverworldTwoGenerationSettings(
+                type,
+                1.7, 1.8,
+                1.35, 2.0,
+                150, 1.5, 1.4
         );
     }
 
