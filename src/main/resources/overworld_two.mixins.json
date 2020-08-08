@@ -7,7 +7,7 @@
     "MixinDimensionType",
     "MixinGeneratorOptions",
     "MixinOreFeature",
-    "MixinSurfaceChunkGenerator"
+    "MixinNoiseChunkGenerator"
   ],
   "injectors": {
     "defaultRequire": 1

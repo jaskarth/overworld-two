@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 @Mixin(NoiseChunkGenerator.class)
-public class MixinSurfaceChunkGenerator {
+public class MixinNoiseChunkGenerator {
     @Redirect(
             method = "populateNoise",
             at = @At(
