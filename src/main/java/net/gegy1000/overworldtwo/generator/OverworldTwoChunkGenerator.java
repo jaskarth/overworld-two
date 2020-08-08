@@ -23,22 +23,22 @@ import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
 import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.gen.chunk.ChunkGeneratorType;
-import net.minecraft.world.gen.chunk.NoiseConfig;
+import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
+import net.minecraft.world.gen.chunk.GenerationShapeConfig;
+import net.minecraft.world.gen.chunk.NoiseChunkGenerator;
 import net.minecraft.world.gen.chunk.NoiseSamplingConfig;
 import net.minecraft.world.gen.chunk.SlideConfig;
 import net.minecraft.world.gen.chunk.StructureConfig;
 import net.minecraft.world.gen.chunk.StructuresConfig;
-import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
 import net.minecraft.world.gen.feature.StructureFeature;
 
-public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
+public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     public static final OverworldTwoGenerationSettings OVERWORLD = createOverworld();
     public static final OverworldTwoGenerationSettings NETHER = createNether();
 
     public static final Codec<OverworldTwoChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-            BiomeSource.field_24713.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
-            Codec.LONG.fieldOf("seed").stable().forGetter(generator -> generator.field_24778),
+            BiomeSource.CODEC.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
+            Codec.LONG.fieldOf("seed").stable().forGetter(generator -> generator.worldSeed),
             OverworldTwoGenerationSettings.CODEC.fieldOf("settings").forGetter(generator -> generator.settings)
     ).apply(instance, instance.stable(OverworldTwoChunkGenerator::new)));
 
@@ -52,7 +52,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     private final OverworldTwoGenerationSettings settings;
 
     public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, OverworldTwoGenerationSettings settings) {
-        super(biomes, seed, settings.wrapped);
+        super(biomes, seed, () -> settings.wrapped);
         this.settings = settings;
 
         ChunkRandom random = new ChunkRandom(seed);
@@ -72,7 +72,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     }
 
     private static NoiseFactory surfaceNoise(OverworldTwoGenerationSettings settings) {
-        NoiseSamplingConfig config = settings.wrapped.method_28559().getSampling();
+        NoiseSamplingConfig config = settings.wrapped.getGenerationShapeConfig().getSampling();
 
         OctaveNoise.Builder octaves = OctaveNoise.builder()
                 .setHorizontalFrequency(1.0 / config.getXZScale())
@@ -86,7 +86,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     }
 
     private static NoiseFactory tearNoise(OverworldTwoGenerationSettings settings) {
-        NoiseSamplingConfig config = settings.wrapped.method_28559().getSampling();
+        NoiseSamplingConfig config = settings.wrapped.getGenerationShapeConfig().getSampling();
 
         OctaveNoise.Builder octaves = OctaveNoise.builder()
                 .setHorizontalFrequency(1.0 / config.getXZFactor())
@@ -121,7 +121,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
         // Vanilla: 1.0, 1.0, 40.0, 22.0
         NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(24.0, 24.0, 40.0, 18.0);
-        NoiseConfig noise = new NoiseConfig(
+        GenerationShapeConfig noise = new GenerationShapeConfig(
                 256,
                 noiseSampler,
                 new SlideConfig(-10, 3, 0),
@@ -135,7 +135,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 false
         );
 
-        ChunkGeneratorType type =  new ChunkGeneratorType(
+        ChunkGeneratorSettings type =  new ChunkGeneratorSettings(
                 structures, noise,
                 Blocks.STONE.getDefaultState(),
                 Blocks.WATER.getDefaultState(),
@@ -158,7 +158,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
         // Vanilla: 1.0, 3.0, 80.0, 60.0
         NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(48.0, 18.0, 120.0, 40.0);
-        NoiseConfig noise = new NoiseConfig(
+        GenerationShapeConfig noise = new GenerationShapeConfig(
                 128,
                 noiseSampler,
                 new SlideConfig(120, 3, 0),
@@ -173,7 +173,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
                 false
         );
 
-        ChunkGeneratorType type = new ChunkGeneratorType(
+        ChunkGeneratorSettings type = new ChunkGeneratorSettings(
                 new StructuresConfig(Optional.ofNullable(structures.getStronghold()), map),
                 noise,
                 Blocks.NETHERRACK.getDefaultState(),
@@ -192,13 +192,13 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
     }
 
     @Override
-    protected Codec<? extends ChunkGenerator> method_28506() {
+    protected Codec<? extends ChunkGenerator> getCodec() {
         return OverworldTwoChunkGenerator.CODEC;
     }
 
     private static float biomeWeight(int x, int z) {
         int idx = (x + 2) + (z + 2) * 5;
-        return field_24775[idx];
+        return BIOME_WEIGHT_TABLE[idx];
     }
 
     private SurfaceParameters sampleSurfaceParameters(int x, int z) {
@@ -235,7 +235,7 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
 
     @Override
     protected void sampleNoiseColumn(double[] buffer, int x, int z) {
-        NoiseConfig noiseConfig = this.field_24774.method_28559();
+        GenerationShapeConfig noiseConfig = this.settings.wrapped.getGenerationShapeConfig();
         SurfaceParameters params = sampleSurfaceParameters(x, z);
         double scaledDepth = params.depth * 0.265625D;
         double scaledScale = 96.0D / params.scale;

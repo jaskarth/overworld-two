@@ -4,9 +4,12 @@ import net.gegy1000.overworldtwo.generator.OverworldTwoChunkGenerator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.MultiNoiseBiomeSource;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
 
 @Mixin(DimensionType.class)
 public class MixinDimensionType {
@@ -18,7 +21,7 @@ public class MixinDimensionType {
 	 * @author SuperCoder79
 	 */
 	@Overwrite
-	private static ChunkGenerator createNetherGenerator(long seed) {
-		return new OverworldTwoChunkGenerator(MultiNoiseBiomeSource.Preset.NETHER.getBiomeSource(seed), seed, OverworldTwoChunkGenerator.NETHER);
+	private static ChunkGenerator createNetherGenerator(Registry<Biome> biomes, Registry<ChunkGeneratorSettings> chunkgens, long seed) {
+		return new OverworldTwoChunkGenerator(MultiNoiseBiomeSource.Preset.NETHER.getBiomeSource(biomes, seed), seed, OverworldTwoChunkGenerator.NETHER);
 	}
 }

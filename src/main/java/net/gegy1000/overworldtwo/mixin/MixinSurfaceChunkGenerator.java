@@ -13,7 +13,7 @@ import net.minecraft.world.WorldAccess;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.gen.StructureAccessor;
-import net.minecraft.world.gen.chunk.SurfaceChunkGenerator;
+import net.minecraft.world.gen.chunk.NoiseChunkGenerator;
 import net.minecraft.world.gen.feature.StructureFeature;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-@Mixin(SurfaceChunkGenerator.class)
+@Mixin(NoiseChunkGenerator.class)
 public class MixinSurfaceChunkGenerator {
     @Redirect(
             method = "populateNoise",

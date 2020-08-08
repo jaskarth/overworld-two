@@ -7,6 +7,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.ServerWorldAccess;
+import net.minecraft.world.StructureWorldAccess;
 import net.minecraft.world.WorldAccess;
 import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
@@ -26,7 +27,7 @@ public class MixinOreFeature {
 
     @Inject(method = "generate", at = @At("HEAD"), cancellable = true)
     public void generate(
-            ServerWorldAccess world, StructureAccessor structures, ChunkGenerator generator,
+            StructureWorldAccess world, ChunkGenerator generator,
             Random random, BlockPos origin, OreFeatureConfig config,
             CallbackInfoReturnable<Boolean> ci
     ) {
@@ -85,7 +86,7 @@ public class MixinOreFeature {
             int width, int height
     ) {
         try (BlockCanvas canvas = BlockCanvas.open(world, minX, minY, minZ, width, height, width)) {
-            canvas.setBrush(BlockBrush.ofWhere(config.state, config.target.getCondition()));
+            canvas.setBrush(BlockBrush.ofWhere(config.state, config.target));
 
             int blockCount = 0;
 
@@ -110,7 +111,7 @@ public class MixinOreFeature {
                 double y = MathHelper.lerp(delta, y1, y2);
                 double z = MathHelper.lerp(delta, z1, z2);
 
-                blockCount += canvas.drawSphere(x, y, z, radius);
+                blockCount += canvas.drawSphere(random, x, y, z, radius);
 
                 pos += 2 * radius;
             }

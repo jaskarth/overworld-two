@@ -4,11 +4,13 @@ import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.WorldAccess;
+import net.minecraft.world.gen.feature.OreFeatureConfig;
 
 import java.util.BitSet;
+import java.util.Random;
 
 public final class BlockCanvas implements AutoCloseable {
-    private static final BlockBrush NO_BRUSH = new BlockBrush(Blocks.AIR.getDefaultState(), s -> false, 0);
+    private static final BlockBrush NO_BRUSH = new BlockBrush(Blocks.AIR.getDefaultState(), OreFeatureConfig.Rules.BASE_STONE_OVERWORLD, 0);
     private static final boolean DEBUG = true;
 
     private WorldAccess world;
@@ -46,12 +48,12 @@ public final class BlockCanvas implements AutoCloseable {
         this.brush = brush;
     }
 
-    public boolean setLocal(int x, int y, int z) {
+    public boolean setLocal(Random random, int x, int y, int z) {
         int idx = this.index(x, y, z);
 
         if (!this.mask.get(idx)) {
             BlockPos pos = this.pos(x, y, z);
-            if (this.brush.test(this.world, pos)) {
+            if (this.brush.test(this.world, random, pos)) {
                 this.mask.set(idx);
                 this.world.setBlockState(pos, this.brush.block, this.brush.flags);
                 return true;
@@ -61,7 +63,7 @@ public final class BlockCanvas implements AutoCloseable {
         return false;
     }
 
-    public int drawSphere(double originX, double originY, double originZ, double radius) {
+    public int drawSphere(Random random, double originX, double originY, double originZ, double radius) {
         int count = 0;
 
         originX -= this.minX;
@@ -89,7 +91,7 @@ public final class BlockCanvas implements AutoCloseable {
                     double dz = z + 0.5 - originZ;
                     if (dx * dx + dy * dy + dz * dz >= radius2) continue;
 
-                    if (this.setLocal(x, y, z)) {
+                    if (this.setLocal(random, x, y, z)) {
                         count++;
                     }
                 }

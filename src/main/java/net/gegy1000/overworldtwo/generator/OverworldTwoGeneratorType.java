@@ -3,8 +3,12 @@ package net.gegy1000.overworldtwo.generator;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.world.GeneratorType;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.VanillaLayeredBiomeSource;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
+import net.minecraft.world.gen.chunk.NoiseChunkGenerator;
 
 @Environment(EnvType.CLIENT)
 public final class OverworldTwoGeneratorType extends GeneratorType {
@@ -19,8 +23,7 @@ public final class OverworldTwoGeneratorType extends GeneratorType {
     }
 
     @Override
-    protected ChunkGenerator method_29076(long seed) {
-        VanillaLayeredBiomeSource biomes = new VanillaLayeredBiomeSource(seed, false, false);
-        return new OverworldTwoChunkGenerator(biomes, seed, OverworldTwoChunkGenerator.OVERWORLD);
+    protected ChunkGenerator getChunkGenerator(Registry<Biome> biomes, Registry<ChunkGeneratorSettings> chunkgens, long seed) {
+        return new OverworldTwoChunkGenerator(new VanillaLayeredBiomeSource(seed, false, false, biomes), seed, OverworldTwoChunkGenerator.OVERWORLD);
     }
 }
