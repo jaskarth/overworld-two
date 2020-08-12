@@ -115,7 +115,6 @@ public class OverworldTwoChunkGenerator extends SurfaceChunkGenerator {
         Registry.register(Registry.CHUNK_GENERATOR, new Identifier(OverworldTwo.ID, "overworld_two"), CODEC);
     }
 
-    // TODO: better support customization
     private static OverworldTwoGenerationSettings createOverworld() {
         StructuresConfig structures = new StructuresConfig(true);
 

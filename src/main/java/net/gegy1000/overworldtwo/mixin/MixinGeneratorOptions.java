@@ -19,7 +19,7 @@ import java.util.Random;
 @Mixin(GeneratorOptions.class)
 public class MixinGeneratorOptions {
     @Inject(method = "fromProperties", at = @At("HEAD"), cancellable = true)
-    private static void injectEcotones(Properties properties, CallbackInfoReturnable<GeneratorOptions> cir) {
+    private static void injectOverworldTwo(Properties properties, CallbackInfoReturnable<GeneratorOptions> cir) {
         // no server.properties file generated
         if (properties.get("level-type") == null) {
             return;
