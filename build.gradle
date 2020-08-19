@@ -25,10 +25,10 @@ dependencies {
 
   modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-//  modRuntime ("com.github.SuperCoder7979:databreaker:67716e92f689cf19afc88ab3d7fb0d0c061958ad") {
-//    exclude module : "fabric-loader"
-//  }
-//
+  modRuntime ("com.github.SuperCoder7979:databreaker:0.2.6") {
+    exclude module : "fabric-loader"
+  }
+
 //  modRuntime ("com.github.jellysquid3:sodium-fabric:b9c2ad3c38b16275cf2f1a81dcfb2fee1563905b")
 //  modRuntime ("com.github.jellysquid3:phosphor-fabric:0749029a498e8f6574643285bae7aecb2eda76b8")
 //  modRuntime ("com.github.jellysquid3:lithium-fabric:6e33b68cd309ca13c661dedd98670729419ff56c")

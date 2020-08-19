@@ -4,8 +4,8 @@
   "version": "${version}",
 
   "name": "Overworld 2",
-  "description": "A replacement for the vanilla world generator that sacrifices parity for performance",
-  "authors": ["gegy1000"],
+  "description": "A replacement for the vanilla world generator that sacrifices parity for performance.",
+  "authors": ["gegy1000", "SuperCoder79"],
 
   "license": "LGPLv3",
 
