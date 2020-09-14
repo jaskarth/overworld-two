@@ -48,6 +48,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     private final Noise[] surfaceNoise;
     private final Noise tearNoise;
     private final ThreadLocal<BiomeCache> biomeCache;
+    private final ThreadLocal<NoiseCache> noiseCache;
     private final Noise extraDensityNoise;
     private final OverworldTwoGenerationSettings settings;
 
@@ -69,6 +70,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         this.tearNoise = tearNoise.create(random.nextLong());
 
         this.biomeCache = ThreadLocal.withInitial(() -> new BiomeCache(128, biomes));
+        this.noiseCache = ThreadLocal.withInitial(() -> new NoiseCache(128, this.noiseSizeY + 1));
     }
 
     private static NoiseFactory surfaceNoise(OverworldTwoGenerationSettings settings) {
@@ -233,7 +235,16 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     }
 
     @Override
+    protected double[] sampleNoiseColumn(int x, int z) {
+        return this.noiseCache.get().get(new double[this.noiseSizeY + 1], x, z);
+    }
+
+    @Override
     protected void sampleNoiseColumn(double[] buffer, int x, int z) {
+        this.noiseCache.get().get(buffer, x, z);
+    }
+
+    private void fillNoiseColumn(double[] buffer, int x, int z) {
         GenerationShapeConfig noiseConfig = this.settings.wrapped.getGenerationShapeConfig();
         SurfaceParameters params = sampleSurfaceParameters(x, z);
         double scaledDepth = params.depth * 0.265625D;
@@ -314,7 +325,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         }
     }
 
-    static class BiomeCache {
+    private static class BiomeCache {
         private final long[] keys;
         private final Biome[] values;
 
@@ -353,6 +364,53 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         }
 
         private static long key(int x, int z) {
+            return ChunkPos.toLong(x, z);
+        }
+    }
+
+    private class NoiseCache {
+        private final long[] keys;
+        private final double[] values;
+
+        private final int mask;
+
+        private NoiseCache(int size, int noiseSize) {
+            size = MathHelper.smallestEncompassingPowerOfTwo(size);
+            this.mask = size - 1;
+
+            this.keys = new long[size];
+            Arrays.fill(this.keys, Long.MIN_VALUE);
+            this.values = new double[size * noiseSize];
+        }
+
+        public double[] get(double[] buffer, int x, int z) {
+            long key = key(x, z);
+            int idx = hash(key) & this.mask;
+
+            // if the entry here has a key that matches ours, we have a cache hit
+            if (this.keys[idx] == key) {
+                // Copy values into buffer
+                System.arraycopy(this.values, idx * buffer.length, buffer, 0, buffer.length);
+            } else {
+                // cache miss: sample and put the result into our cache entry
+
+                // Sample the noise column to store the new values
+                fillNoiseColumn(buffer, x, z);
+
+                // Create copy of the array
+                System.arraycopy(buffer, 0, this.values, idx * buffer.length, buffer.length);
+
+                this.keys[idx] = key;
+            }
+
+            return buffer;
+        }
+
+        private int hash(long key) {
+            return (int) HashCommon.mix(key);
+        }
+
+        private long key(int x, int z) {
             return ChunkPos.toLong(x, z);
         }
     }

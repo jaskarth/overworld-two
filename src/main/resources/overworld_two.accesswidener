@@ -2,6 +2,7 @@ accessWidener v1 named
 
 extendable class net/minecraft/world/gen/chunk/NoiseChunkGenerator
 extendable method net/minecraft/world/gen/chunk/NoiseChunkGenerator sampleNoiseColumn ([DII)V
+extendable method net/minecraft/world/gen/chunk/NoiseChunkGenerator sampleNoiseColumn (II)[D
 extendable method net/minecraft/world/gen/chunk/NoiseChunkGenerator method_28553 (II)D
 
 accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator worldSeed J

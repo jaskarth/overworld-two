@@ -32,7 +32,7 @@ public class MixinNoiseChunkGenerator {
             method = "populateNoise",
             at = @At(
                     value = "FIELD",
-                    target = "Lnet/minecraft/world/gen/feature/StructureFeature;field_24861:Ljava/util/List;"
+                    target = "Lnet/minecraft/world/gen/feature/StructureFeature;JIGSAW_STRUCTURES:Ljava/util/List;"
             )
     )
     private List<StructureFeature<?>> disableStructureIterator(WorldAccess world, StructureAccessor structures, Chunk chunk) {
@@ -63,7 +63,7 @@ public class MixinNoiseChunkGenerator {
             return;
         }
 
-        for (StructureFeature<?> feature : StructureFeature.field_24861) {
+        for (StructureFeature<?> feature : StructureFeature.JIGSAW_STRUCTURES) {
             LongSet references = structureReferences.get(feature);
             if (references == null) continue;
 

@@ -28,6 +28,6 @@ public class MixinDimensionType {
 		}
 
 		// Vanilla generator
-		return new NoiseChunkGenerator(MultiNoiseBiomeSource.Preset.NETHER.getBiomeSource(biomes, seed), seed, () -> chunkgens.method_31140(ChunkGeneratorSettings.NETHER));
+		return new NoiseChunkGenerator(MultiNoiseBiomeSource.Preset.NETHER.getBiomeSource(biomes, seed), seed, () -> chunkgens.getOrThrow(ChunkGeneratorSettings.NETHER));
 	}
 }
