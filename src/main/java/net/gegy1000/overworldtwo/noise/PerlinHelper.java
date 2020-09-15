@@ -4,7 +4,7 @@ import net.minecraft.util.math.noise.SimplexNoiseSampler;
 
 import java.util.Random;
 
-public final class Perlin {
+public final class PerlinHelper {
     private static final int[] GRADIENTS = new int[SimplexNoiseSampler.gradients.length * 3];
 
     static {

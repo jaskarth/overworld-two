@@ -4,7 +4,7 @@ import net.minecraft.util.math.MathHelper;
 
 import java.util.Random;
 
-public final class PerlinNoise implements Noise {
+public class PerlinNoise implements Noise {
     public static final NoiseRange RANGE = NoiseRange.NORMAL;
 
     protected final double originX;
@@ -17,7 +17,7 @@ public final class PerlinNoise implements Noise {
         this.originY = random.nextDouble() * 256.0;
         this.originZ = random.nextDouble() * 256.0;
 
-        this.permutations = Perlin.initPermutationTable(random);
+        this.permutations = PerlinHelper.initPermutationTable(random);
     }
 
     public static NoiseFactory create() {
@@ -45,14 +45,14 @@ public final class PerlinNoise implements Noise {
         int pltf = this.permute(plf) + oz;
         int plbf = this.permute(plf + 1) + oz;
 
-        double rtf = Perlin.grad(this.permute(prtf), ix, iy, iz);
-        double ltf = Perlin.grad(this.permute(pltf), ix - 1.0, iy, iz);
-        double rbf = Perlin.grad(this.permute(prbf), ix, iy - 1.0, iz);
-        double lbf = Perlin.grad(this.permute(plbf), ix - 1.0, iy - 1.0, iz);
-        double rtb = Perlin.grad(this.permute(prtf + 1), ix, iy, iz - 1.0);
-        double ltb = Perlin.grad(this.permute(pltf + 1), ix - 1.0, iy, iz - 1.0);
-        double rbb = Perlin.grad(this.permute(prbf + 1), ix, iy - 1.0, iz - 1.0);
-        double lbb = Perlin.grad(this.permute(plbf + 1), ix - 1.0, iy - 1.0, iz - 1.0);
+        double rtf = PerlinHelper.grad(this.permute(prtf), ix, iy, iz);
+        double ltf = PerlinHelper.grad(this.permute(pltf), ix - 1.0, iy, iz);
+        double rbf = PerlinHelper.grad(this.permute(prbf), ix, iy - 1.0, iz);
+        double lbf = PerlinHelper.grad(this.permute(plbf), ix - 1.0, iy - 1.0, iz);
+        double rtb = PerlinHelper.grad(this.permute(prtf + 1), ix, iy, iz - 1.0);
+        double ltb = PerlinHelper.grad(this.permute(pltf + 1), ix - 1.0, iy, iz - 1.0);
+        double rbb = PerlinHelper.grad(this.permute(prbf + 1), ix, iy - 1.0, iz - 1.0);
+        double lbb = PerlinHelper.grad(this.permute(plbf + 1), ix - 1.0, iy - 1.0, iz - 1.0);
 
         return MathHelper.lerp3(
                 MathHelper.perlinFade(ix),

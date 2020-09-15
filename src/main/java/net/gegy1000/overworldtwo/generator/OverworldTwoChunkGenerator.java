@@ -14,6 +14,8 @@ import net.gegy1000.overworldtwo.noise.NoiseFactory;
 import net.gegy1000.overworldtwo.noise.NormalizedNoise;
 import net.gegy1000.overworldtwo.noise.OctaveNoise;
 import net.gegy1000.overworldtwo.noise.PerlinNoise;
+import net.gegy1000.overworldtwo.noise.PerlinNoiseTwo;
+
 import net.minecraft.block.Blocks;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
@@ -82,7 +84,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 .setLacunarity(settings.surfaceLacunarity)
                 .setPersistence(1.0 / settings.surfacePersistence);
 
-        octaves.add(PerlinNoise.create(), 6);
+        octaves.add(PerlinNoiseTwo.create(), 6);
 
         return NormalizedNoise.of(octaves.build());
     }
@@ -96,7 +98,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 .setLacunarity(settings.tearLacunarity)
                 .setPersistence(1.0 / settings.tearPersistence);
 
-        octaves.add(PerlinNoise.create(), 4);
+        octaves.add(PerlinNoiseTwo.create(), 4);
 
         return NormalizedNoise.of(octaves.build());
     }
@@ -108,7 +110,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 .setLacunarity(settings.extraDensityLacunarity)
                 .setPersistence(1.0 / settings.extraDensityPersistence);
 
-        octaves.add(PerlinNoise.create(), 4);
+        octaves.add(PerlinNoiseTwo.create(), 4);
 
         return NormalizedNoise.of(octaves.build());
     }
