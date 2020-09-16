@@ -84,7 +84,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 .setLacunarity(settings.surfaceLacunarity)
                 .setPersistence(1.0 / settings.surfacePersistence);
 
-        octaves.add(PerlinNoiseTwo.create(), 6);
+        octaves.add(PerlinNoiseTwo.create(), 5);
 
         return NormalizedNoise.of(octaves.build());
     }
@@ -98,7 +98,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 .setLacunarity(settings.tearLacunarity)
                 .setPersistence(1.0 / settings.tearPersistence);
 
-        octaves.add(PerlinNoiseTwo.create(), 4);
+        octaves.add(PerlinNoiseTwo.create(), 3);
 
         return NormalizedNoise.of(octaves.build());
     }
@@ -110,7 +110,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 .setLacunarity(settings.extraDensityLacunarity)
                 .setPersistence(1.0 / settings.extraDensityPersistence);
 
-        octaves.add(PerlinNoiseTwo.create(), 4);
+        octaves.add(PerlinNoiseTwo.create(), 3);
 
         return NormalizedNoise.of(octaves.build());
     }
