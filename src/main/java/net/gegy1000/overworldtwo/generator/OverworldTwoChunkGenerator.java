@@ -263,15 +263,28 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         double densityOffset = noiseConfig.getDensityOffset();
 
         for(int y = 0; y <= this.noiseSizeY; ++y) {
-            double noise = this.getNoiseAt(x, y, z);
             double yOffset = 1.0D - (double) y * 2.0D / (double)this.noiseSizeY + randomDensityOffset;
             double density = yOffset * densityFactor + densityOffset;
             double falloff = (density + scaledDepth) * scaledScale;
+
             if (falloff > 0.0D) {
-                noise += falloff * 4.0D;
-            } else {
-                noise += falloff;
+                falloff *= 4.0D;
             }
+
+            // Avoid sampling the noise until we've evaluated the falloff.
+            // Since the extent of the noise is (-256, 256), adding +/- 512 won't change the final noise as a / 200 and clamp is done to normalize it between [-1, 1].
+            // So if the falloff is too high or low, we know that the noise won't have any effect on the terrain.
+            // This generally happens at low y sections where the terrain is fully solid or at high y sections where it's all air.
+            // TODO: While this does look like it's working, I'm almost certain I screwed something up severely here.
+            double noise;
+            if (falloff > 512 || falloff < -512) {
+                noise = 0;
+            } else {
+                noise = this.getNoiseAt(x, y, z);
+            }
+
+            noise += falloff;
+
             double slide;
             if (topSize > 0.0D) {
                 slide = ((double)(this.noiseSizeY - y) - topOffset) / topSize;
