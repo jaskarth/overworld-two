@@ -160,7 +160,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         map.put(StructureFeature.RUINED_PORTAL, new StructureConfig(25, 10, 34222645));
 
         // Vanilla: 1.0, 3.0, 80.0, 60.0
-        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(48.0, 18.0, 120.0, 40.0);
+        NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(32.0, 10.0, 60.0, 40.0);
         GenerationShapeConfig noise = new GenerationShapeConfig(
                 128,
                 noiseSampler,
