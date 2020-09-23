@@ -199,6 +199,11 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         return OverworldTwoChunkGenerator.CODEC;
     }
 
+    @Override
+    public ChunkGenerator withSeed(long seed) {
+        return new OverworldTwoChunkGenerator(this.biomeSource.withSeed(seed), seed, this.settings);
+    }
+
     private static float biomeWeight(int x, int z) {
         int idx = (x + 2) + (z + 2) * 5;
         return BIOME_WEIGHT_TABLE[idx];
