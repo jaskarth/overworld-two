@@ -1,6 +1,7 @@
 package net.gegy1000.overworldtwo.util;
 
 import net.minecraft.block.BlockState;
+import net.minecraft.structure.rule.AlwaysTrueRuleTest;
 import net.minecraft.structure.rule.RuleTest;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldAccess;
@@ -20,7 +21,7 @@ public final class BlockBrush {
     }
 
     public static BlockBrush of(BlockState block) {
-        return new BlockBrush(block, null, 0b10);
+        return new BlockBrush(block, AlwaysTrueRuleTest.INSTANCE, 0b10);
     }
 
     public static BlockBrush ofWhere(BlockState block, RuleTest replace) {
@@ -28,6 +29,6 @@ public final class BlockBrush {
     }
 
     public boolean test(WorldAccess world, Random random, BlockPos pos) {
-        return this.replace == null || this.replace.test(world.getBlockState(pos), random);
+        return this.replace.test(world.getBlockState(pos), random);
     }
 }

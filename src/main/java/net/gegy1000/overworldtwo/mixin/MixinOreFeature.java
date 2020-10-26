@@ -40,7 +40,7 @@ public class MixinOreFeature {
         float theta = random.nextFloat() * PI;
 
         int nodeRadius = MathHelper.ceil((config.size / 16.0F * 2.0F + 1.0F) / 2.0F);
-        float radius = config.size / 16.0F * 2.0F;
+        float radius = config.size / 8.0F;
 
         double x1 = origin.getX() + MathHelper.sin(theta) * radius;
         double x2 = origin.getX() - MathHelper.sin(theta) * radius;
@@ -113,7 +113,7 @@ public class MixinOreFeature {
 
                 blockCount += canvas.drawSphere(random, x, y, z, radius);
 
-                pos += 2 * radius;
+                pos += radius;
             }
 
             return blockCount > 0;
