@@ -4,10 +4,13 @@
   "package": "net.gegy1000.overworldtwo.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "ChunkSectionAccess",
     "MixinDimensionType",
     "MixinGeneratorOptions",
+    "MixinHeightmap",
     "MixinOreFeature",
-    "MixinNoiseChunkGenerator"
+    "MixinProtoChunk",
+    "PalettedContainerAccess"
   ],
   "injectors": {
     "defaultRequire": 1

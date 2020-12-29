@@ -1,5 +1,5 @@
 plugins {
-  id 'fabric-loom' version '0.4-SNAPSHOT'
+  id 'fabric-loom' version '0.5-SNAPSHOT'
   id 'maven-publish'
 }
 
@@ -25,8 +25,8 @@ dependencies {
 
   modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-  modRuntime ("com.github.SuperCoder7979:databreaker:0.2.6") {
-    exclude module : "fabric-loader"
+  modRuntime("com.github.SuperCoder7979:databreaker:0.2.6") {
+    exclude module: "fabric-loader"
   }
 
 //  modRuntime ("com.github.jellysquid3:sodium-fabric:b9c2ad3c38b16275cf2f1a81dcfb2fee1563905b")

@@ -5,10 +5,16 @@ extendable method net/minecraft/world/gen/chunk/NoiseChunkGenerator sampleNoiseC
 extendable method net/minecraft/world/gen/chunk/NoiseChunkGenerator sampleNoiseColumn (II)[D
 extendable method net/minecraft/world/gen/chunk/NoiseChunkGenerator method_28553 (II)D
 
-accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator worldSeed J
+accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator seed J
 accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator settings Ljava/util/function/Supplier;
 accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator BIOME_WEIGHT_TABLE [F
+accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator field_24774 Lnet/minecraft/world/gen/chunk/ChunkGeneratorType;
+accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator noiseSizeX I
 accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator noiseSizeY I
+accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator noiseSizeZ I
+accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator verticalNoiseResolution I
+accessible field net/minecraft/world/gen/chunk/NoiseChunkGenerator horizontalNoiseResolution I
+accessible method net/minecraft/world/gen/chunk/NoiseChunkGenerator getNoiseWeight (III)D
 
 accessible method net/minecraft/world/gen/chunk/ChunkGeneratorSettings <init> (Lnet/minecraft/world/gen/chunk/StructuresConfig;Lnet/minecraft/world/gen/chunk/GenerationShapeConfig;Lnet/minecraft/block/BlockState;Lnet/minecraft/block/BlockState;IIIZ)V
 accessible method net/minecraft/client/world/GeneratorType <init> (Ljava/lang/String;)V

@@ -1,29 +1,40 @@
 package net.gegy1000.overworldtwo.generator;
 
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Optional;
-
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.HashCommon;
+import it.unimi.dsi.fastutil.longs.LongIterator;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.gegy1000.overworldtwo.OverworldTwo;
 import net.gegy1000.overworldtwo.noise.Noise;
 import net.gegy1000.overworldtwo.noise.NoiseFactory;
 import net.gegy1000.overworldtwo.noise.NormalizedNoise;
 import net.gegy1000.overworldtwo.noise.OctaveNoise;
-import net.gegy1000.overworldtwo.noise.PerlinNoise;
 import net.gegy1000.overworldtwo.noise.PerlinNoiseTwo;
-
 import net.minecraft.block.Blocks;
+import net.minecraft.structure.JigsawJunction;
+import net.minecraft.structure.PoolStructurePiece;
+import net.minecraft.structure.StructurePiece;
+import net.minecraft.structure.StructureStart;
+import net.minecraft.structure.pool.StructurePool;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.world.Heightmap;
+import net.minecraft.world.WorldAccess;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.ProtoChunk;
 import net.minecraft.world.gen.ChunkRandom;
+import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
 import net.minecraft.world.gen.chunk.GenerationShapeConfig;
@@ -34,13 +45,17 @@ import net.minecraft.world.gen.chunk.StructureConfig;
 import net.minecraft.world.gen.chunk.StructuresConfig;
 import net.minecraft.world.gen.feature.StructureFeature;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+
 public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     public static final OverworldTwoGenerationSettings OVERWORLD = createOverworld();
     public static final OverworldTwoGenerationSettings NETHER = createNether();
 
     public static final Codec<OverworldTwoChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BiomeSource.CODEC.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
-            Codec.LONG.fieldOf("seed").stable().forGetter(generator -> generator.worldSeed),
+            Codec.LONG.fieldOf("seed").stable().forGetter(generator -> generator.seed),
             OverworldTwoGenerationSettings.CODEC.fieldOf("settings").forGetter(generator -> generator.settings)
     ).apply(instance, instance.stable(OverworldTwoChunkGenerator::new)));
 
@@ -138,7 +153,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 false
         );
 
-        ChunkGeneratorSettings type =  new ChunkGeneratorSettings(
+        ChunkGeneratorSettings type = new ChunkGeneratorSettings(
                 structures, noise,
                 Blocks.STONE.getDefaultState(),
                 Blocks.WATER.getDefaultState(),
@@ -210,7 +225,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     }
 
     private SurfaceParameters sampleSurfaceParameters(int x, int z) {
-        BiomeCache cache = biomeCache.get();
+        BiomeCache cache = this.biomeCache.get();
 
         float totalScale = 0.0F;
         float totalDepth = 0.0F;
@@ -253,36 +268,36 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
     private void fillNoiseColumn(double[] buffer, int x, int z) {
         GenerationShapeConfig noiseConfig = this.settings.wrapped.getGenerationShapeConfig();
-        SurfaceParameters params = sampleSurfaceParameters(x, z);
-        double scaledDepth = params.depth * 0.265625D;
-        double scaledScale = 96.0D / params.scale;
+        SurfaceParameters params = this.sampleSurfaceParameters(x, z);
+        double scaledDepth = params.depth * 0.265625;
+        double scaledScale = (96.0 / params.scale) / 200.0;
 
-        double topTarget = noiseConfig.getTopSlide().getTarget();
+        double topTarget = noiseConfig.getTopSlide().getTarget() / 200.0;
         double topSize = noiseConfig.getTopSlide().getSize();
         double topOffset = noiseConfig.getTopSlide().getOffset();
-        double bottomTarget = noiseConfig.getBottomSlide().getTarget();
+        double bottomTarget = noiseConfig.getBottomSlide().getTarget() / 200.0;
         double bottomSize = noiseConfig.getBottomSlide().getSize();
         double bottomOffset = noiseConfig.getBottomSlide().getOffset();
-        double randomDensityOffset = noiseConfig.hasRandomDensityOffset() ? this.extraDensityNoiseAt(x, z) : 0.0D;
+        double randomDensityOffset = noiseConfig.hasRandomDensityOffset() ? this.extraDensityNoiseAt(x, z) : 0.0;
         double densityFactor = noiseConfig.getDensityFactor();
         double densityOffset = noiseConfig.getDensityOffset();
 
-        for(int y = 0; y <= this.noiseSizeY; ++y) {
-            double yOffset = 1.0D - (double) y * 2.0D / (double)this.noiseSizeY + randomDensityOffset;
+        for (int y = 0; y <= this.noiseSizeY; y++) {
+            double yOffset = 1.0 - y * 2.0 / this.noiseSizeY + randomDensityOffset;
             double density = yOffset * densityFactor + densityOffset;
             double falloff = (density + scaledDepth) * scaledScale;
 
             if (falloff > 0.0D) {
-                falloff *= 4.0D;
+                falloff *= 4.0;
             }
 
             // Avoid sampling the noise until we've evaluated the falloff.
-            // Since the extent of the noise is (-256, 256), adding +/- 512 won't change the final noise as a / 200 and clamp is done to normalize it between [-1, 1].
+            // Since the extent of the noise is (-1, 1), adding +/- 2 won't change the final noise
             // So if the falloff is too high or low, we know that the noise won't have any effect on the terrain.
             // This generally happens at low y sections where the terrain is fully solid or at high y sections where it's all air.
             // TODO: While this does look like it's working, I'm almost certain I screwed something up severely here.
             double noise;
-            if (falloff > 512 || falloff < -512) {
+            if (falloff > 2 || falloff < -2) {
                 noise = 0;
             } else {
                 noise = this.getNoiseAt(x, y, z);
@@ -291,17 +306,17 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             noise += falloff;
 
             double slide;
-            if (topSize > 0.0D) {
-                slide = ((double)(this.noiseSizeY - y) - topOffset) / topSize;
+            if (topSize > 0.0) {
+                slide = ((this.noiseSizeY - y) - topOffset) / topSize;
                 noise = MathHelper.clampedLerp(topTarget, noise, slide);
             }
 
-            if (bottomSize > 0.0D) {
-                slide = ((double) y - bottomOffset) / bottomSize;
+            if (bottomSize > 0.0) {
+                slide = (y - bottomOffset) / bottomSize;
                 noise = MathHelper.clampedLerp(bottomTarget, noise, slide);
             }
 
-            buffer[y] = noise;
+            buffer[y] = MathHelper.clamp(noise, -1.0, 1.0);
         }
     }
 
@@ -319,20 +334,240 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             surfaceNoise = MathHelper.lerp(tearNoise, left, right);
         }
 
-        return surfaceNoise * 200;
+        return surfaceNoise;
     }
 
     protected double extraDensityNoiseAt(int x, int z) {
-        double rawDensity = this.extraDensityNoise.get(x, 10.0D, z);
+        double rawDensity = this.extraDensityNoise.get(x, 10.0, z);
         double scaledDensity;
-        if (rawDensity < 0.0D) {
-            scaledDensity = -rawDensity * 0.3D;
+        if (rawDensity < 0.0) {
+            scaledDensity = -rawDensity * 0.3;
         } else {
             scaledDensity = rawDensity;
         }
 
-        double finalDensity = scaledDensity * 24.575625D - 2.0D;
-        return finalDensity < 0.0D ? finalDensity * 0.009486607142857142D : Math.min(finalDensity, 1.0D) * 0.006640625D;
+        double finalDensity = scaledDensity * 24.575625 - 2.0;
+        return finalDensity < 0.0 ? finalDensity * 0.009486607142857142 : Math.min(finalDensity, 1.0) * 0.006640625;
+    }
+
+    @Override
+    public void populateNoise(WorldAccess world, StructureAccessor structures, Chunk chunk) {
+        ObjectList<StructurePiece> pieces = new ObjectArrayList<>(10);
+        ObjectList<JigsawJunction> junctions = new ObjectArrayList<>(32);
+
+        ChunkPos chunkPos = chunk.getPos();
+        int chunkX = chunkPos.x;
+        int chunkZ = chunkPos.z;
+
+        this.collectStructures(world, chunk, pieces, junctions);
+
+        double[][] noiseX0 = new double[this.noiseSizeZ + 1][this.noiseSizeY + 1];
+        double[][] noiseX1 = new double[this.noiseSizeZ + 1][this.noiseSizeY + 1];
+
+        for (int z = 0; z < this.noiseSizeZ + 1; z++) {
+            noiseX0[z] = new double[this.noiseSizeY + 1];
+            this.sampleNoiseColumn(noiseX0[z], chunkX * this.noiseSizeX, chunkZ * this.noiseSizeZ + z);
+            noiseX1[z] = new double[this.noiseSizeY + 1];
+        }
+
+        ProtoChunk protoChunk = (ProtoChunk) chunk;
+
+        try (
+                NoiseBlockWriter surfaceWriter = new NoiseBlockWriter(this.defaultBlock, Heightmap.Type.WORLD_SURFACE_WG);
+                NoiseBlockWriter fluidWriter = new NoiseBlockWriter(this.defaultFluid, Heightmap.Type.OCEAN_FLOOR_WG)
+        ) {
+            for (int noiseX = 0; noiseX < this.noiseSizeX; noiseX++) {
+                for (int noiseZ = 0; noiseZ < this.noiseSizeZ + 1; noiseZ++) {
+                    this.sampleNoiseColumn(noiseX1[noiseZ], chunkX * this.noiseSizeX + noiseX + 1, chunkZ * this.noiseSizeZ + noiseZ);
+                }
+
+                for (int noiseZ = 0; noiseZ < this.noiseSizeZ; noiseZ++) {
+                    this.populateNoiseColumn(
+                            pieces, junctions,
+                            protoChunk, surfaceWriter, fluidWriter,
+                            noiseX0[noiseZ], noiseX1[noiseZ],
+                            noiseX0[noiseZ + 1], noiseX1[noiseZ + 1],
+                            noiseX, noiseZ
+                    );
+                }
+
+                double[][] swap = noiseX0;
+                noiseX0 = noiseX1;
+                noiseX1 = swap;
+            }
+        }
+    }
+
+    private void populateNoiseColumn(
+            ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions,
+            ProtoChunk chunk, NoiseBlockWriter surfaceWriter, NoiseBlockWriter fluidWriter,
+            double[] noiseX0Z0, double[] noiseX1Z0,
+            double[] noiseX0Z1, double[] noiseX1Z1,
+            int noiseX, int noiseZ
+    ) {
+        ChunkPos chunkPos = chunk.getPos();
+        int minChunkX = chunkPos.getStartX();
+        int minChunkZ = chunkPos.getStartZ();
+
+        int xzRes = this.horizontalNoiseResolution;
+        int yRes = this.verticalNoiseResolution;
+
+        int seaLevel = this.getSeaLevel();
+
+        ChunkSection section = null;
+        int lastSectionY = -1;
+
+        for (int noiseY = this.noiseSizeY - 1; noiseY >= 0; noiseY--) {
+            double x0y0z0 = noiseX0Z0[noiseY];
+            double x0y0z1 = noiseX0Z1[noiseY];
+            double x1y0z0 = noiseX1Z0[noiseY];
+            double x1y0z1 = noiseX1Z1[noiseY];
+            double x0y1z0 = noiseX0Z0[noiseY + 1];
+            double x0y1z1 = noiseX0Z1[noiseY + 1];
+            double x1y1z0 = noiseX1Z0[noiseY + 1];
+            double x1y1z1 = noiseX1Z1[noiseY + 1];
+
+            for (int localY = yRes - 1; localY >= 0; localY--) {
+                int globalY = noiseY * yRes + localY;
+                int sectionLocalY = globalY & 15;
+
+                int sectionY = globalY >> 4;
+                if (lastSectionY != sectionY) {
+                    if (section != null) {
+                        section.unlock();
+                    }
+
+                    section = chunk.getSection(sectionY);
+                    lastSectionY = sectionY;
+
+                    section.lock();
+                    surfaceWriter.setSection(chunk, section);
+                    fluidWriter.setSection(chunk, section);
+                }
+
+                double intermediateY = (double) localY / yRes;
+                double x0z0 = MathHelper.lerp(intermediateY, x0y0z0, x0y1z0);
+                double x1z0 = MathHelper.lerp(intermediateY, x1y0z0, x1y1z0);
+                double x0z1 = MathHelper.lerp(intermediateY, x0y0z1, x0y1z1);
+                double x1z1 = MathHelper.lerp(intermediateY, x1y0z1, x1y1z1);
+
+                for (int localX = 0; localX < xzRes; localX++) {
+                    int globalX = minChunkX + noiseX * xzRes + localX;
+                    int sectionLocalX = globalX & 15;
+
+                    double ix = (double) localX / xzRes;
+                    double z0 = MathHelper.lerp(ix, x0z0, x1z0);
+                    double z1 = MathHelper.lerp(ix, x0z1, x1z1);
+
+                    for (int localZ = 0; localZ < xzRes; ++localZ) {
+                        int globalZ = minChunkZ + noiseZ * xzRes + localZ;
+                        int sectionLocalZ = globalZ & 15;
+
+                        double intermediateZ = (double) localZ / xzRes;
+                        double noise = MathHelper.lerp(intermediateZ, z0, z1);
+
+                        double density = this.evaluateDensity(pieces, junctions, globalX, globalY, globalZ, noise);
+
+                        if (density > 0.0) {
+                            surfaceWriter.set(sectionLocalX, sectionLocalY, sectionLocalZ);
+                        } else if (globalY < seaLevel) {
+                            fluidWriter.set(sectionLocalX, sectionLocalY, sectionLocalZ);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (section != null) {
+            section.unlock();
+        }
+    }
+
+    private double evaluateDensity(
+            ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions,
+            int globalX, int globalY, int globalZ,
+            double noise
+    ) {
+        double density = noise / 2.0 - noise * noise * noise / 24.0;
+
+        for (int i = 0; i < pieces.size(); i++) {
+            StructurePiece piece = pieces.get(i);
+
+            BlockBox bounds = piece.getBoundingBox();
+            int dx = Math.max(0, Math.max(bounds.minX - globalX, globalX - bounds.maxX));
+            int dy = globalY - (bounds.minY + (piece instanceof PoolStructurePiece ? ((PoolStructurePiece) piece).getGroundLevelDelta() : 0));
+            int dz = Math.max(0, Math.max(bounds.minZ - globalZ, globalZ - bounds.maxZ));
+            density += getNoiseWeight(dx, dy, dz) * 0.8;
+        }
+
+        for (int i = 0; i < junctions.size(); i++) {
+            JigsawJunction junction = junctions.get(i);
+
+            int dx = globalX - junction.getSourceX();
+            int dy = globalY - junction.getSourceGroundY();
+            int dz = globalZ - junction.getSourceZ();
+            density += getNoiseWeight(dx, dy, dz) * 0.4;
+        }
+
+        return density;
+    }
+
+    private void collectStructures(WorldAccess world, Chunk chunk, ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions) {
+        ChunkPos chunkPos = chunk.getPos();
+
+        int minX = chunkPos.getStartX();
+        int minZ = chunkPos.getStartZ();
+        int maxX = chunkPos.getEndX();
+        int maxZ = chunkPos.getEndZ();
+
+        Map<StructureFeature<?>, LongSet> structureReferences = chunk.getStructureReferences();
+        if (structureReferences.isEmpty()) {
+            return;
+        }
+
+        for (StructureFeature<?> feature : StructureFeature.JIGSAW_STRUCTURES) {
+            LongSet references = structureReferences.get(feature);
+            if (references == null) continue;
+
+            LongIterator referenceIterator = references.iterator();
+
+            while (referenceIterator.hasNext()) {
+                long packedReference = referenceIterator.nextLong();
+                int referenceX = ChunkPos.getPackedX(packedReference);
+                int referenceZ = ChunkPos.getPackedZ(packedReference);
+
+                Chunk referenceChunk = world.getChunk(referenceX, referenceZ, ChunkStatus.STRUCTURE_STARTS);
+                StructureStart<?> start = referenceChunk.getStructureStart(feature);
+                if (start == null || !start.hasChildren()) {
+                    continue;
+                }
+
+                for (StructurePiece piece : start.getChildren()) {
+                    int radius = 12;
+                    if (!piece.intersectsChunk(chunkPos, radius)) {
+                        continue;
+                    }
+
+                    if (piece instanceof PoolStructurePiece) {
+                        PoolStructurePiece pooledPiece = (PoolStructurePiece) piece;
+                        StructurePool.Projection projection = pooledPiece.getPoolElement().getProjection();
+                        if (projection == StructurePool.Projection.RIGID) {
+                            pieces.add(pooledPiece);
+                        }
+
+                        for (JigsawJunction junction : pooledPiece.getJunctions()) {
+                            int junctionX = junction.getSourceX();
+                            int junctionZ = junction.getSourceZ();
+                            if (junctionX > minX - radius && junctionZ > minZ - radius && junctionX < maxX + radius && junctionZ < maxZ + radius) {
+                                junctions.add(junction);
+                            }
+                        }
+                    } else {
+                        pieces.add(piece);
+                    }
+                }
+            }
+        }
     }
 
     private static class SurfaceParameters {
@@ -372,7 +607,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             }
 
             // cache miss: sample the source and put the result into our cache entry
-            Biome sampled = source.getBiomeForNoiseGen(x, 0, z);
+            Biome sampled = this.source.getBiomeForNoiseGen(x, 0, z);
             this.values[idx] = sampled;
             this.keys[idx] = key;
 
@@ -404,8 +639,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         }
 
         public double[] get(double[] buffer, int x, int z) {
-            long key = key(x, z);
-            int idx = hash(key) & this.mask;
+            long key = this.key(x, z);
+            int idx = this.hash(key) & this.mask;
 
             // if the entry here has a key that matches ours, we have a cache hit
             if (this.keys[idx] == key) {
@@ -415,7 +650,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 // cache miss: sample and put the result into our cache entry
 
                 // Sample the noise column to store the new values
-                fillNoiseColumn(buffer, x, z);
+                OverworldTwoChunkGenerator.this.fillNoiseColumn(buffer, x, z);
 
                 // Create copy of the array
                 System.arraycopy(buffer, 0, this.values, idx * buffer.length, buffer.length);
