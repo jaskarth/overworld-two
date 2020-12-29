@@ -13,30 +13,42 @@ import net.minecraft.world.chunk.PalettedContainer;
 import net.minecraft.world.chunk.ProtoChunk;
 
 final class NoiseBlockWriter implements AutoCloseable {
+    private final ProtoChunk chunk;
     private final BlockState state;
-    private final Heightmap.Type heightmapType;
 
     private final boolean nonEmpty;
     private final boolean hasTicks;
     private final boolean hasFluid;
     private final boolean hasLight;
 
-    private ProtoChunk chunk;
-    private HeightmapExt heightmap;
+    private final HeightmapExt worldGenHeightmap;
+    private final HeightmapExt oceanFloorHeightmap;
+
     private ChunkSection section;
     private Palette<BlockState> palette;
     private PackedIntegerArray data;
 
-    private int minSectionX;
+    private final int minSectionX;
     private int minSectionY;
-    private int minSectionZ;
+    private final int minSectionZ;
 
     private int paletteValue = -1;
     private int count;
 
-    public NoiseBlockWriter(BlockState state, Heightmap.Type heightmapType) {
+    public NoiseBlockWriter(ProtoChunk chunk, BlockState state) {
+        this.chunk = chunk;
         this.state = state;
-        this.heightmapType = heightmapType;
+
+        this.worldGenHeightmap = (HeightmapExt) chunk.getHeightmap(Heightmap.Type.WORLD_SURFACE_WG);
+        if (Heightmap.Type.OCEAN_FLOOR_WG.getBlockPredicate().test(state)) {
+            this.oceanFloorHeightmap = (HeightmapExt) chunk.getHeightmap(Heightmap.Type.OCEAN_FLOOR_WG);
+        } else {
+            this.oceanFloorHeightmap = null;
+        }
+
+        ChunkPos chunkPos = chunk.getPos();
+        this.minSectionX = chunkPos.getStartX();
+        this.minSectionZ = chunkPos.getStartZ();
 
         this.nonEmpty = !state.isAir();
         this.hasTicks = state.hasRandomTicks();
@@ -44,9 +56,9 @@ final class NoiseBlockWriter implements AutoCloseable {
         this.hasLight = state.getLuminance() != 0;
     }
 
-    public void setSection(ProtoChunk chunk, ChunkSection section) {
+    public void setSection(ChunkSection section) {
         this.closeSection();
-        this.openSection(chunk, section);
+        this.openSection(section);
     }
 
     public void set(int x, int y, int z) {
@@ -57,10 +69,20 @@ final class NoiseBlockWriter implements AutoCloseable {
         this.data.set(index(x, y, z), this.paletteValue);
         this.count++;
 
-        this.heightmap.trackUpdate(x, y + this.minSectionY, z);
+        this.trackHeightmapUpdate(x, y, z);
 
         if (this.hasLight) {
             this.chunk.addLightSource(new BlockPos(this.minSectionX + x, this.minSectionY + y, this.minSectionZ + z));
+        }
+    }
+
+    private void trackHeightmapUpdate(int x, int y, int z) {
+        int worldY = y + this.minSectionY;
+        this.worldGenHeightmap.trackUpdate(x, worldY, z);
+
+        HeightmapExt oceanFloorHeightmap = this.oceanFloorHeightmap;
+        if (oceanFloorHeightmap != null) {
+            oceanFloorHeightmap.trackUpdate(x, worldY, z);
         }
     }
 
@@ -74,15 +96,10 @@ final class NoiseBlockWriter implements AutoCloseable {
     }
 
     @SuppressWarnings("unchecked")
-    private void openSection(ProtoChunk chunk, ChunkSection section) {
-        this.chunk = chunk;
+    private void openSection(ChunkSection section) {
         this.section = section;
-        this.heightmap = (HeightmapExt) chunk.getHeightmap(this.heightmapType);
 
-        ChunkPos chunkPos = chunk.getPos();
-        this.minSectionX = chunkPos.getStartX();
         this.minSectionY = section.getYOffset();
-        this.minSectionZ = chunkPos.getStartZ();
 
         PalettedContainer<BlockState> container = section.getContainer();
         PalettedContainerAccess<BlockState> containerAccess = (PalettedContainerAccess<BlockState>) container;

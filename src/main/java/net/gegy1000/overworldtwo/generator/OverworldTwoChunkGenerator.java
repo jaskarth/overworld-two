@@ -25,7 +25,6 @@ import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.world.Heightmap;
 import net.minecraft.world.WorldAccess;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.source.BiomeSource;
@@ -373,8 +372,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         ProtoChunk protoChunk = (ProtoChunk) chunk;
 
         try (
-                NoiseBlockWriter surfaceWriter = new NoiseBlockWriter(this.defaultBlock, Heightmap.Type.WORLD_SURFACE_WG);
-                NoiseBlockWriter fluidWriter = new NoiseBlockWriter(this.defaultFluid, Heightmap.Type.OCEAN_FLOOR_WG)
+                NoiseBlockWriter surfaceWriter = new NoiseBlockWriter(protoChunk, this.defaultBlock);
+                NoiseBlockWriter fluidWriter = new NoiseBlockWriter(protoChunk, this.defaultFluid)
         ) {
             for (int noiseX = 0; noiseX < this.noiseSizeX; noiseX++) {
                 for (int noiseZ = 0; noiseZ < this.noiseSizeZ + 1; noiseZ++) {
@@ -441,8 +440,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                     lastSectionY = sectionY;
 
                     section.lock();
-                    surfaceWriter.setSection(chunk, section);
-                    fluidWriter.setSection(chunk, section);
+                    surfaceWriter.setSection(section);
+                    fluidWriter.setSection(section);
                 }
 
                 double intermediateY = (double) localY / yRes;
