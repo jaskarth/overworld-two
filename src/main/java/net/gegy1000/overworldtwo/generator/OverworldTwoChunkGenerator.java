@@ -67,6 +67,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     private final ThreadLocal<NoiseCache> noiseCache;
     private final Noise extraDensityNoise;
     private final OverworldTwoGenerationSettings settings;
+    private int cachedSeaLevel = Integer.MIN_VALUE;
 
     public OverworldTwoChunkGenerator(BiomeSource biomes, long seed, OverworldTwoGenerationSettings settings) {
         super(biomes, seed, () -> settings.wrapped);
@@ -567,6 +568,15 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 }
             }
         }
+    }
+
+    @Override
+    public int getSeaLevel() {
+        if (this.cachedSeaLevel == Integer.MIN_VALUE) {
+            this.cachedSeaLevel = this.settings.wrapped.getSeaLevel();
+        }
+
+        return this.cachedSeaLevel;
     }
 
     private static class SurfaceParameters {
