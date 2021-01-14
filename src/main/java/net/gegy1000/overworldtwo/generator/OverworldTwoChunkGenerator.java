@@ -21,6 +21,7 @@ import net.minecraft.structure.StructurePiece;
 import net.minecraft.structure.StructureStart;
 import net.minecraft.structure.pool.StructurePool;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.MathHelper;
@@ -51,6 +52,17 @@ import java.util.Optional;
 public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     public static final OverworldTwoGenerationSettings OVERWORLD = createOverworld();
     public static final OverworldTwoGenerationSettings NETHER = createNether();
+
+    // Use a 4x smaller array to reduce memory weight and hopefully make it fit into the cache.
+    private static final float[] NOISE_WEIGHT_TABLE = Util.make(new float[12 * 12 * 24], (array) -> {
+        for(int z = 0; z < 12; z++) {
+            for(int x = 0; x < 12; x++) {
+                for(int y = 0; y < 24; y++) {
+                    array[(z * 12 * 24) + (x * 24) + y] = (float)calculateNoiseWeight(x, y - 12, z);
+                }
+            }
+        }
+    });
 
     public static final Codec<OverworldTwoChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             BiomeSource.CODEC.fieldOf("biome_source").forGetter(generator -> generator.biomeSource),
@@ -503,7 +515,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             int dx = Math.max(0, Math.max(bounds.minX - globalX, globalX - bounds.maxX));
             int dy = globalY - (bounds.minY + (piece instanceof PoolStructurePiece ? ((PoolStructurePiece) piece).getGroundLevelDelta() : 0));
             int dz = Math.max(0, Math.max(bounds.minZ - globalZ, globalZ - bounds.maxZ));
-            density += getNoiseWeight(dx, dy, dz) * 0.8;
+            density += getNoiseWeight(Math.abs(dx), dy, Math.abs(dz)) * 0.8;
         }
 
         for (int i = 0; i < junctions.size(); i++) {
@@ -512,7 +524,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             int dx = globalX - junction.getSourceX();
             int dy = globalY - junction.getSourceGroundY();
             int dz = globalZ - junction.getSourceZ();
-            density += getNoiseWeight(dx, dy, dz) * 0.4;
+
+            density += getNoiseWeight(Math.abs(dx), dy, Math.abs(dz)) * 0.4;
         }
 
         return density > 0.0;
@@ -583,6 +596,16 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             this.cachedSeaLevel = cachedSeaLevel = this.settings.wrapped.getSeaLevel();
         }
         return cachedSeaLevel;
+    }
+
+    public static double getNoiseWeight(int x, int y, int z) {
+        int dy = y + 12;
+
+        if (x >= 0 && x < 12 && z >= 0 && z < 12 && dy >= 0 && dy < 24) {
+            return NOISE_WEIGHT_TABLE[(z * 12 * 24) + (x * 24) + dy];
+        }
+
+        return 0.0D;
     }
 
     private static class SurfaceParameters {
