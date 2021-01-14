@@ -414,7 +414,6 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
         int seaLevel = this.getSeaLevel();
 
-        ChunkSection section = null;
         int lastSectionY = -1;
 
         for (int noiseY = this.noiseSizeY - 1; noiseY >= 0; noiseY--) {
@@ -433,14 +432,9 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
                 int sectionY = globalY >> 4;
                 if (lastSectionY != sectionY) {
-                    if (section != null) {
-                        section.unlock();
-                    }
-
-                    section = chunk.getSection(sectionY);
+                    ChunkSection section = chunk.getSection(sectionY);
                     lastSectionY = sectionY;
 
-                    section.lock();
                     surfaceWriter.setSection(section);
                     fluidWriter.setSection(section);
                 }
@@ -466,7 +460,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                         double intermediateZ = (double) localZ / xzRes;
                         double noise = MathHelper.lerp(intermediateZ, z0, z1);
 
-                        double density = this.evaluateDensity(pieces, junctions, globalX, globalY, globalZ, noise);
+                        double density = evaluateDensity(pieces, junctions, globalX, globalY, globalZ, noise);
 
                         if (density > 0.0) {
                             surfaceWriter.set(sectionLocalX, sectionLocalY, sectionLocalZ);
@@ -477,13 +471,9 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 }
             }
         }
-
-        if (section != null) {
-            section.unlock();
-        }
     }
 
-    private double evaluateDensity(
+    private static double evaluateDensity(
             ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions,
             int globalX, int globalY, int globalZ,
             double noise
@@ -572,11 +562,11 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
     @Override
     public int getSeaLevel() {
-        if (this.cachedSeaLevel == Integer.MIN_VALUE) {
-            this.cachedSeaLevel = this.settings.wrapped.getSeaLevel();
+        int cachedSeaLevel = this.cachedSeaLevel;
+        if (cachedSeaLevel == Integer.MIN_VALUE) {
+            this.cachedSeaLevel = cachedSeaLevel = this.settings.wrapped.getSeaLevel();
         }
-
-        return this.cachedSeaLevel;
+        return cachedSeaLevel;
     }
 
     private static class SurfaceParameters {
