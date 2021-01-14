@@ -416,6 +416,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
         int lastSectionY = -1;
 
+        boolean hasStructures = !pieces.isEmpty() || !junctions.isEmpty();
+
         for (int noiseY = this.noiseSizeY - 1; noiseY >= 0; noiseY--) {
             double x0y0z0 = noiseX0Z0[noiseY];
             double x0y0z1 = noiseX0Z1[noiseY];
@@ -425,6 +427,11 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             double x0y1z1 = noiseX0Z1[noiseY + 1];
             double x1y1z0 = noiseX1Z0[noiseY + 1];
             double x1y1z1 = noiseX1Z1[noiseY + 1];
+
+            double dx0z0 = x0y1z0 - x0y0z0;
+            double dx1z0 = x1y1z0 - x1y0z0;
+            double dx0z1 = x0y1z1 - x0y0z1;
+            double dx1z1 = x1y1z1 - x1y0z1;
 
             for (int localY = yRes - 1; localY >= 0; localY--) {
                 int globalY = noiseY * yRes + localY;
@@ -439,30 +446,39 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                     fluidWriter.setSection(section);
                 }
 
-                double intermediateY = (double) localY / yRes;
-                double x0z0 = MathHelper.lerp(intermediateY, x0y0z0, x0y1z0);
-                double x1z0 = MathHelper.lerp(intermediateY, x1y0z0, x1y1z0);
-                double x0z1 = MathHelper.lerp(intermediateY, x0y0z1, x0y1z1);
-                double x1z1 = MathHelper.lerp(intermediateY, x1y0z1, x1y1z1);
+                double iy = (double) localY / yRes;
+                double x0z0 = iy * dx0z0 + x0y0z0;
+                double x1z0 = iy * dx1z0 + x1y0z0;
+                double x0z1 = iy * dx0z1 + x0y0z1;
+                double x1z1 = iy * dx1z1 + x1y0z1;
+
+                double dz0 = x1z0 - x0z0;
+                double dz1 = x1z1 - x0z1;
 
                 for (int localX = 0; localX < xzRes; localX++) {
                     int globalX = minChunkX + noiseX * xzRes + localX;
                     int sectionLocalX = globalX & 15;
 
                     double ix = (double) localX / xzRes;
-                    double z0 = MathHelper.lerp(ix, x0z0, x1z0);
-                    double z1 = MathHelper.lerp(ix, x0z1, x1z1);
+                    double z0 = ix * dz0 + x0z0;
+                    double z1 = ix * dz1 + x0z1;
+                    double dz = z1 - z0;
 
                     for (int localZ = 0; localZ < xzRes; ++localZ) {
                         int globalZ = minChunkZ + noiseZ * xzRes + localZ;
                         int sectionLocalZ = globalZ & 15;
 
-                        double intermediateZ = (double) localZ / xzRes;
-                        double noise = MathHelper.lerp(intermediateZ, z0, z1);
+                        double iz = (double) localZ / xzRes;
+                        double noise = iz * dz + z0;
 
-                        double density = evaluateDensity(pieces, junctions, globalX, globalY, globalZ, noise);
+                        boolean solid = noise > 0.0;
 
-                        if (density > 0.0) {
+                        // avoid further structure computation given we know we will be solid already
+                        if (!solid && hasStructures) {
+                            solid = evaluateSolid(pieces, junctions, globalX, globalY, globalZ, noise);
+                        }
+
+                        if (solid) {
                             surfaceWriter.set(sectionLocalX, sectionLocalY, sectionLocalZ);
                         } else if (globalY < seaLevel) {
                             fluidWriter.set(sectionLocalX, sectionLocalY, sectionLocalZ);
@@ -473,7 +489,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         }
     }
 
-    private static double evaluateDensity(
+    private static boolean evaluateSolid(
             ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions,
             int globalX, int globalY, int globalZ,
             double noise
@@ -499,7 +515,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             density += getNoiseWeight(dx, dy, dz) * 0.4;
         }
 
-        return density;
+        return density > 0.0;
     }
 
     private void collectStructures(WorldAccess world, Chunk chunk, ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions) {
