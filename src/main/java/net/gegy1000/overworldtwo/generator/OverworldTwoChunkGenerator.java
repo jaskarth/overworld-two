@@ -430,15 +430,26 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
         boolean hasStructures = !pieces.isEmpty() || !junctions.isEmpty();
 
-        for (int noiseY = this.noiseSizeY - 1; noiseY >= 0; noiseY--) {
+        int noiseY = this.noiseSizeY - 1;
+        double lx0y1z0 = noiseX0Z0[noiseY + 1];
+        double lx0y1z1 = noiseX0Z1[noiseY + 1];
+        double lx1y1z0 = noiseX1Z0[noiseY + 1];
+        double lx1y1z1 = noiseX1Z1[noiseY + 1];
+
+        for (; noiseY >= 0; noiseY--) {
             double x0y0z0 = noiseX0Z0[noiseY];
             double x0y0z1 = noiseX0Z1[noiseY];
             double x1y0z0 = noiseX1Z0[noiseY];
             double x1y0z1 = noiseX1Z1[noiseY];
-            double x0y1z0 = noiseX0Z0[noiseY + 1];
-            double x0y1z1 = noiseX0Z1[noiseY + 1];
-            double x1y1z0 = noiseX1Z0[noiseY + 1];
-            double x1y1z1 = noiseX1Z1[noiseY + 1];
+            double x0y1z0 = lx0y1z0;
+            double x0y1z1 = lx0y1z1;
+            double x1y1z0 = lx1y1z0;
+            double x1y1z1 = lx1y1z1;
+
+            lx0y1z0 = x0y0z0;
+            lx0y1z1 = x0y0z1;
+            lx1y1z0 = x1y0z0;
+            lx1y1z1 = x1y0z1;
 
             double dx0z0 = x0y1z0 - x0y0z0;
             double dx1z0 = x1y1z0 - x1y0z0;
