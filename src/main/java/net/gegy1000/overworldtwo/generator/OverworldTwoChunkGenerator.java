@@ -494,10 +494,10 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                         double iz = (double) localZ / xzRes;
                         double noise = iz * dz + z0;
 
-                        boolean solid = noise > 0.0;
-
-                        // avoid further structure computation given we know we will be solid already
-                        if (!solid && hasStructures) {
+                        boolean solid;
+                        if (hasStructures) {
+                            solid = noise > 0.0;
+                        } else {
                             solid = evaluateSolid(pieces, junctions, globalX, globalY, globalZ, noise);
                         }
 
