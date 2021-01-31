@@ -12,6 +12,7 @@ group = project.maven_group
 
 repositories {
   maven { url = "https://jitpack.io" }
+  maven { url = "https://maven.gegy.dev" }
 }
 
 minecraft {
@@ -28,6 +29,9 @@ dependencies {
   modRuntime("com.github.SuperCoder7979:databreaker:0.2.6") {
     exclude module: "fabric-loader"
   }
+
+  implementation 'dev.gegy:noise-composer:0.1.0'
+  include 'dev.gegy:noise-composer:0.1.0'
 
 //  modRuntime ("com.github.jellysquid3:sodium-fabric:b9c2ad3c38b16275cf2f1a81dcfb2fee1563905b")
 //  modRuntime ("com.github.jellysquid3:phosphor-fabric:0749029a498e8f6574643285bae7aecb2eda76b8")
