@@ -1,6 +1,7 @@
 package net.gegy1000.overworldtwo.noise;
 
 import dev.gegy.noise.CustomNoise;
+import dev.gegy.noise.DomainWrapNoise;
 import dev.gegy.noise.Noise;
 import dev.gegy.noise.sampler.NoiseSampler3d;
 
@@ -12,7 +13,8 @@ public class PerlinNoiseTwo extends PerlinNoise {
     }
 
     public static Noise create() {
-        return CustomNoise.of(seed -> new PerlinNoiseTwo(new Random(seed)), NoiseSampler3d.TYPE, RANGE);
+        Noise perlin = CustomNoise.of(seed -> new PerlinNoiseTwo(new Random(seed)), NoiseSampler3d.TYPE, RANGE);
+        return DomainWrapNoise.of(perlin, PRECISION);
     }
 
     /**
