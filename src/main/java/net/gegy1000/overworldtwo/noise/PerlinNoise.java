@@ -1,18 +1,11 @@
 package net.gegy1000.overworldtwo.noise;
 
-import dev.gegy.noise.CustomNoise;
-import dev.gegy.noise.DomainWrapNoise;
-import dev.gegy.noise.Noise;
-import dev.gegy.noise.NoiseRange;
-import dev.gegy.noise.sampler.NoiseSampler3d;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.Random;
 
-public class PerlinNoise implements NoiseSampler3d {
+public class PerlinNoise implements Noise {
     public static final NoiseRange RANGE = NoiseRange.NORMAL;
-
-    protected static final double PRECISION = 33554432; // 2^25: match vanilla
 
     protected final double originX;
     protected final double originY;
@@ -27,16 +20,15 @@ public class PerlinNoise implements NoiseSampler3d {
         this.permutations = PerlinHelper.initPermutationTable(random);
     }
 
-    public static Noise create() {
-        Noise perlin = CustomNoise.of(seed -> new PerlinNoise(new Random(seed)), NoiseSampler3d.TYPE, RANGE);
-        return DomainWrapNoise.of(perlin, PRECISION);
+    public static NoiseFactory create() {
+        return (seed) -> new PerlinNoise(new Random(seed));
     }
 
     @Override
     public double get(double x, double y, double z) {
-        x = x + this.originX;
-        y = y + this.originY;
-        z = z + this.originZ;
+        x = Noise.maintainPrecision(x + this.originX);
+        y = Noise.maintainPrecision(y + this.originY);
+        z = Noise.maintainPrecision(z + this.originZ);
 
         int ox = MathHelper.floor(x);
         int oy = MathHelper.floor(y);
@@ -73,5 +65,10 @@ public class PerlinNoise implements NoiseSampler3d {
 
     private int permute(int x) {
         return this.permutations[x & 255] & 255;
+    }
+
+    @Override
+    public NoiseRange getRange() {
+        return RANGE;
     }
 }

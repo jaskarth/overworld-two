@@ -3,17 +3,16 @@ package net.gegy1000.overworldtwo.generator;
 import com.google.common.collect.Maps;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.gegy.noise.Noise;
-import dev.gegy.noise.NoiseFactory;
-import dev.gegy.noise.OctaveNoise;
-import dev.gegy.noise.compile.NoiseCompiler;
-import dev.gegy.noise.sampler.NoiseSampler3d;
 import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.gegy1000.overworldtwo.OverworldTwo;
+import net.gegy1000.overworldtwo.noise.Noise;
+import net.gegy1000.overworldtwo.noise.NoiseFactory;
+import net.gegy1000.overworldtwo.noise.NormalizedNoise;
+import net.gegy1000.overworldtwo.noise.OctaveNoise;
 import net.gegy1000.overworldtwo.noise.PerlinNoiseTwo;
 import net.minecraft.block.Blocks;
 import net.minecraft.structure.JigsawJunction;
@@ -56,10 +55,10 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
     // Use a 4x smaller array to reduce memory weight and hopefully make it fit into the cache.
     private static final float[] NOISE_WEIGHT_TABLE = Util.make(new float[12 * 12 * 24], (array) -> {
-        for (int z = 0; z < 12; z++) {
-            for (int x = 0; x < 12; x++) {
-                for (int y = 0; y < 24; y++) {
-                    array[(z * 12 * 24) + (x * 24) + y] = (float) calculateNoiseWeight(x, y - 12, z);
+        for(int z = 0; z < 12; z++) {
+            for(int x = 0; x < 12; x++) {
+                for(int y = 0; y < 24; y++) {
+                    array[(z * 12 * 24) + (x * 24) + y] = (float)calculateNoiseWeight(x, y - 12, z);
                 }
             }
         }
@@ -71,16 +70,14 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             OverworldTwoGenerationSettings.CODEC.fieldOf("settings").forGetter(generator -> generator.settings)
     ).apply(instance, instance.stable(OverworldTwoChunkGenerator::new)));
 
-    private static final NoiseCompiler NOISE_COMPILER = NoiseCompiler.create(OverworldTwo.class.getClassLoader());
-
     private static final int NOISE_RES_XZ = 1;
     private static final int NOISE_RES_Y = 2;
 
-    private final NoiseSampler3d[] surfaceNoise;
-    private final NoiseSampler3d tearNoise;
+    private final Noise[] surfaceNoise;
+    private final Noise tearNoise;
     private final ThreadLocal<BiomeCache> biomeCache;
     private final ThreadLocal<NoiseCache> noiseCache;
-    private final NoiseSampler3d extraDensityNoise;
+    private final Noise extraDensityNoise;
     private final OverworldTwoGenerationSettings settings;
     private int cachedSeaLevel = Integer.MIN_VALUE;
 
@@ -90,61 +87,59 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
         ChunkRandom random = new ChunkRandom(seed);
 
-        NoiseFactory<NoiseSampler3d> surfaceNoise = NOISE_COMPILER.compile(surfaceNoise(settings), NoiseSampler3d.TYPE);
-
-        this.surfaceNoise = new NoiseSampler3d[] {
+        NoiseFactory surfaceNoise = surfaceNoise(settings);
+        this.surfaceNoise = new Noise[] {
                 surfaceNoise.create(random.nextLong()),
                 surfaceNoise.create(random.nextLong()),
         };
 
-        NoiseFactory<NoiseSampler3d> extraDensityNoise = NOISE_COMPILER.compile(extraDensityNoise(settings), NoiseSampler3d.TYPE);
-        this.extraDensityNoise = extraDensityNoise.create(random.nextLong());
+        this.extraDensityNoise = extraDensityNoise(settings).create(random.nextLong());
 
-        NoiseFactory<NoiseSampler3d> tearNoise = NOISE_COMPILER.compile(tearNoise(settings), NoiseSampler3d.TYPE);
+        NoiseFactory tearNoise = tearNoise(settings);
         this.tearNoise = tearNoise.create(random.nextLong());
 
         this.biomeCache = ThreadLocal.withInitial(() -> new BiomeCache(128, biomes));
         this.noiseCache = ThreadLocal.withInitial(() -> new NoiseCache(128, this.noiseSizeY + 1));
     }
 
-    private static Noise surfaceNoise(OverworldTwoGenerationSettings settings) {
+    private static NoiseFactory surfaceNoise(OverworldTwoGenerationSettings settings) {
         NoiseSamplingConfig config = settings.wrapped.getGenerationShapeConfig().getSampling();
 
-        OctaveNoise octaves = OctaveNoise.builder()
-                .setScaleXZ(1.0 / config.getXZScale())
-                .setScaleY(1.0 / config.getYScale())
+        OctaveNoise.Builder octaves = OctaveNoise.builder()
+                .setHorizontalFrequency(1.0 / config.getXZScale())
+                .setVerticalFrequency(1.0 / config.getYScale())
                 .setLacunarity(settings.surfaceLacunarity)
                 .setPersistence(1.0 / settings.surfacePersistence);
 
         octaves.add(PerlinNoiseTwo.create(), 5);
 
-        return octaves.build().normalize();
+        return NormalizedNoise.of(octaves.build());
     }
 
-    private static Noise tearNoise(OverworldTwoGenerationSettings settings) {
+    private static NoiseFactory tearNoise(OverworldTwoGenerationSettings settings) {
         NoiseSamplingConfig config = settings.wrapped.getGenerationShapeConfig().getSampling();
 
-        OctaveNoise octaves = OctaveNoise.builder()
-                .setScaleXZ(1.0 / config.getXZFactor())
-                .setScaleY(1.0 / config.getYFactor())
+        OctaveNoise.Builder octaves = OctaveNoise.builder()
+                .setHorizontalFrequency(1.0 / config.getXZFactor())
+                .setVerticalFrequency(1.0 / config.getYFactor())
                 .setLacunarity(settings.tearLacunarity)
                 .setPersistence(1.0 / settings.tearPersistence);
 
         octaves.add(PerlinNoiseTwo.create(), 3);
 
-        return octaves.build().normalize();
+        return NormalizedNoise.of(octaves.build());
     }
 
-    private static Noise extraDensityNoise(OverworldTwoGenerationSettings settings) {
-        OctaveNoise octaves = OctaveNoise.builder()
-                .setScaleXZ(1.0 / settings.extraDensityScale)
-                .setScaleY(1.0 / settings.extraDensityScale)
+    private static NoiseFactory extraDensityNoise(OverworldTwoGenerationSettings settings) {
+        OctaveNoise.Builder octaves = OctaveNoise.builder()
+                .setHorizontalFrequency(1.0 / settings.extraDensityScale)
+                .setVerticalFrequency(1.0 / settings.extraDensityScale)
                 .setLacunarity(settings.extraDensityLacunarity)
                 .setPersistence(1.0 / settings.extraDensityPersistence);
 
         octaves.add(PerlinNoiseTwo.create(), 3);
 
-        return octaves.build().normalize();
+        return NormalizedNoise.of(octaves.build());
     }
 
     public static void register() {
