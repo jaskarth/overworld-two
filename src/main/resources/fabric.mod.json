@@ -3,7 +3,7 @@
   "id": "overworld_two",
   "version": "${version}",
 
-  "name": "Overworld 2",
+  "name": "Overworld Two",
   "description": "A replacement for the vanilla world generator that sacrifices parity for performance.",
   "authors": ["gegy1000", "SuperCoder79"],
 
