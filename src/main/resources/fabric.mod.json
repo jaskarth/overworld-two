@@ -6,6 +6,11 @@
   "name": "Overworld Two",
   "description": "A replacement for the vanilla world generator that sacrifices parity for performance.",
   "authors": ["gegy1000", "SuperCoder79"],
+  "contact": {
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/overworld-two",
+    "sources": "https://github.com/Gegy/overworld-two",
+    "issues": "https://github.com/Gegy/overworld-two/issues"
+  },
 
   "license": "LGPLv3",
   "icon": "assets/overworld-two/icon.png",
