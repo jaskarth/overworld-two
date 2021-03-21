@@ -13,7 +13,7 @@
   },
 
   "license": "LGPLv3",
-  "icon": "assets/overworld-two/icon.png",
+  "icon": "assets/overworld_two/icon.png",
   "environment": "*",
   "entrypoints": {
     "main": ["net.gegy1000.overworldtwo.OverworldTwo"]
