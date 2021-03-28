@@ -9,7 +9,6 @@
     "MixinGeneratorOptions",
     "MixinHeightmap",
     "MixinOreFeature",
-    "MixinProtoChunk",
     "PalettedContainerAccess"
   ],
   "injectors": {
