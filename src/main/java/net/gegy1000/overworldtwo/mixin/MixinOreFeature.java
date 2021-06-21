@@ -13,6 +13,7 @@ import net.minecraft.world.gen.StructureAccessor;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
 import net.minecraft.world.gen.feature.OreFeature;
 import net.minecraft.world.gen.feature.OreFeatureConfig;
+import net.minecraft.world.gen.feature.util.FeatureContext;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,13 +27,15 @@ public class MixinOreFeature {
     private static final int MAX_SLOPE = 4;
 
     @Inject(method = "generate", at = @At("HEAD"), cancellable = true)
-    public void generate(
-            StructureWorldAccess world, ChunkGenerator generator,
-            Random random, BlockPos origin, OreFeatureConfig config,
-            CallbackInfoReturnable<Boolean> ci
-    ) {
+    public void generate(FeatureContext<OreFeatureConfig> context, CallbackInfoReturnable<Boolean> cir) {
+        StructureWorldAccess world = context.getWorld();
+        ChunkGenerator generator = context.getGenerator();
+        Random random = context.getRandom();
+        BlockPos origin = context.getOrigin();
+        OreFeatureConfig config = context.getConfig();
+
         if (generator instanceof OverworldTwoChunkGenerator) {
-            ci.setReturnValue(this.generate(world, random, origin, config));
+            cir.setReturnValue(this.generate(world, random, origin, config));
         }
     }
 
@@ -85,39 +88,40 @@ public class MixinOreFeature {
             int minX, int minY, int minZ,
             int width, int height
     ) {
-        try (BlockCanvas canvas = BlockCanvas.open(world, minX, minY, minZ, width, height, width)) {
-            canvas.setBrush(BlockBrush.ofWhere(config.state, config.target));
+        int blockCount = 0;
+        for (OreFeatureConfig.Target target : config.targets) {
+            try (BlockCanvas canvas = BlockCanvas.open(world, minX, minY, minZ, width, height, width)) {
+                canvas.setBrush(BlockBrush.ofWhere(target.state, target.target));
 
-            int blockCount = 0;
+                double dx = x2 - x1;
+                double dy = y2 - y1;
+                double dz = z2 - z1;
+                double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-            double dx = x2 - x1;
-            double dy = y2 - y1;
-            double dz = z2 - z1;
-            double length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                double pos = 0.0;
 
-            double pos = 0.0;
+                for (int i = 0; i < config.size; i++) {
+                    double radius = this.nextRadius(random, pos / length, config.size);
 
-            for (int i = 0; i < config.size; i++) {
-                double radius = this.nextRadius(random, pos / length, config.size);
+                    // offset first sphere to have its origin at (x1; y1; z1)
+                    if (i == 0) pos -= radius;
 
-                // offset first sphere to have its origin at (x1; y1; z1)
-                if (i == 0) pos -= radius;
+                    double center = pos + radius;
+                    if (center >= length) break;
 
-                double center = pos + radius;
-                if (center >= length) break;
+                    double delta = center / length;
+                    double x = MathHelper.lerp(delta, x1, x2);
+                    double y = MathHelper.lerp(delta, y1, y2);
+                    double z = MathHelper.lerp(delta, z1, z2);
 
-                double delta = center / length;
-                double x = MathHelper.lerp(delta, x1, x2);
-                double y = MathHelper.lerp(delta, y1, y2);
-                double z = MathHelper.lerp(delta, z1, z2);
+                    blockCount += canvas.drawSphere(random, x, y, z, radius);
 
-                blockCount += canvas.drawSphere(random, x, y, z, radius);
-
-                pos += 2 * radius;
+                    pos += 2 * radius;
+                }
             }
-
-            return blockCount > 0;
         }
+
+        return blockCount > 0;
     }
 
     private double nextRadius(Random random, double delta, int size) {

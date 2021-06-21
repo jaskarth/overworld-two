@@ -14,6 +14,7 @@ import net.gegy1000.overworldtwo.noise.NoiseFactory;
 import net.gegy1000.overworldtwo.noise.NormalizedNoise;
 import net.gegy1000.overworldtwo.noise.OctaveNoise;
 import net.gegy1000.overworldtwo.noise.PerlinNoiseTwo;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.structure.JigsawJunction;
 import net.minecraft.structure.PoolStructurePiece;
@@ -24,6 +25,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockBox;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.WorldAccess;
@@ -35,19 +37,18 @@ import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.ProtoChunk;
 import net.minecraft.world.gen.ChunkRandom;
 import net.minecraft.world.gen.StructureAccessor;
-import net.minecraft.world.gen.chunk.ChunkGenerator;
-import net.minecraft.world.gen.chunk.ChunkGeneratorSettings;
-import net.minecraft.world.gen.chunk.GenerationShapeConfig;
-import net.minecraft.world.gen.chunk.NoiseChunkGenerator;
-import net.minecraft.world.gen.chunk.NoiseSamplingConfig;
-import net.minecraft.world.gen.chunk.SlideConfig;
-import net.minecraft.world.gen.chunk.StructureConfig;
-import net.minecraft.world.gen.chunk.StructuresConfig;
+import net.minecraft.world.gen.StructureWeightSampler;
+import net.minecraft.world.gen.chunk.*;
 import net.minecraft.world.gen.feature.StructureFeature;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Predicate;
 
 public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     public static final OverworldTwoGenerationSettings OVERWORLD = createOverworld();
@@ -58,8 +59,17 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         for(int z = 0; z < 12; z++) {
             for(int x = 0; x < 12; x++) {
                 for(int y = 0; y < 24; y++) {
-                    array[(z * 12 * 24) + (x * 24) + y] = (float)calculateNoiseWeight(x, y - 12, z);
+                    array[(z * 12 * 24) + (x * 24) + y] = (float)calculateStructureWeight(x, y - 12, z);
                 }
+            }
+        }
+    });
+
+    private static final float[] BIOME_WEIGHT_TABLE = Util.make(new float[25], (array) -> {
+        for(int i = -2; i <= 2; ++i) {
+            for(int j = -2; j <= 2; ++j) {
+                float f = 10.0F / MathHelper.sqrt((float)(i * i + j * j) + 0.2F);
+                array[i + 2 + (j + 2) * 5] = f;
             }
         }
     });
@@ -151,7 +161,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
         // Vanilla: 1.0, 1.0, 40.0, 22.0
         NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(24.0, 24.0, 40.0, 18.0);
-        GenerationShapeConfig noise = new GenerationShapeConfig(
+        GenerationShapeConfig noise = GenerationShapeConfig.create(
+                0,
                 256,
                 noiseSampler,
                 new SlideConfig(-10, 3, 0),
@@ -170,7 +181,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 Blocks.STONE.getDefaultState(),
                 Blocks.WATER.getDefaultState(),
                 -10, 0, 63,
-                false
+                0,
+                false, false, false, false, false, false
         );
 
         return new OverworldTwoGenerationSettings(
@@ -188,7 +200,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
 
         // Vanilla: 1.0, 3.0, 80.0, 60.0
         NoiseSamplingConfig noiseSampler = new NoiseSamplingConfig(32.0, 10.0, 60.0, 40.0);
-        GenerationShapeConfig noise = new GenerationShapeConfig(
+        GenerationShapeConfig noise = GenerationShapeConfig.create(
+                0,
                 128,
                 noiseSampler,
                 new SlideConfig(120, 3, 0),
@@ -209,7 +222,8 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 Blocks.NETHERRACK.getDefaultState(),
                 Blocks.LAVA.getDefaultState(),
                 0, 0, 32,
-                false
+                0,
+                false, false, false, false, false, false
         );
 
         return new OverworldTwoGenerationSettings(
@@ -268,12 +282,10 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         return new SurfaceParameters((depth * 0.5F) - 0.125F, (scale * 0.9F) + 0.1F);
     }
 
-    @Override
     protected double[] sampleNoiseColumn(int x, int z) {
         return this.noiseCache.get().get(new double[this.noiseSizeY + 1], x, z);
     }
 
-    @Override
     protected void sampleNoiseColumn(double[] buffer, int x, int z) {
         this.noiseCache.get().get(buffer, x, z);
     }
@@ -363,7 +375,13 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     }
 
     @Override
-    public void populateNoise(WorldAccess world, StructureAccessor structures, Chunk chunk) {
+    public CompletableFuture<Chunk> populateNoise(Executor executor, StructureAccessor accessor, Chunk chunk) {
+        populateNoise(accessor, chunk);
+
+        return CompletableFuture.completedFuture(chunk);
+    }
+
+    public void populateNoise(StructureAccessor structures, Chunk chunk) {
         ObjectList<StructurePiece> pieces = new ObjectArrayList<>(10);
         ObjectList<JigsawJunction> junctions = new ObjectArrayList<>(32);
 
@@ -371,7 +389,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         int chunkX = chunkPos.x;
         int chunkZ = chunkPos.z;
 
-        this.collectStructures(world, chunk, pieces, junctions);
+        this.collectStructures(structures, chunk, pieces, junctions);
 
         double[][] noiseX0 = new double[this.noiseSizeZ + 1][this.noiseSizeY + 1];
         double[][] noiseX1 = new double[this.noiseSizeZ + 1][this.noiseSizeY + 1];
@@ -523,9 +541,9 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
             StructurePiece piece = pieces.get(i);
 
             BlockBox bounds = piece.getBoundingBox();
-            int dx = Math.max(0, Math.max(bounds.minX - globalX, globalX - bounds.maxX));
-            int dy = globalY - (bounds.minY + (piece instanceof PoolStructurePiece ? ((PoolStructurePiece) piece).getGroundLevelDelta() : 0));
-            int dz = Math.max(0, Math.max(bounds.minZ - globalZ, globalZ - bounds.maxZ));
+            int dx = Math.max(0, Math.max(bounds.getMinX() - globalX, globalX - bounds.getMaxX()));
+            int dy = globalY - (bounds.getMinY() + (piece instanceof PoolStructurePiece ? ((PoolStructurePiece) piece).getGroundLevelDelta() : 0));
+            int dz = Math.max(0, Math.max(bounds.getMinZ() - globalZ, globalZ - bounds.getMaxZ()));
             density += getNoiseWeight(Math.abs(dx), dy, Math.abs(dz)) * 0.8;
         }
 
@@ -542,7 +560,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         return density > 0.0;
     }
 
-    private void collectStructures(WorldAccess world, Chunk chunk, ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions) {
+    private void collectStructures(StructureAccessor accessor, Chunk chunk, ObjectList<StructurePiece> pieces, ObjectList<JigsawJunction> junctions) {
         ChunkPos chunkPos = chunk.getPos();
 
         int minX = chunkPos.getStartX();
@@ -566,7 +584,7 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
                 int referenceX = ChunkPos.getPackedX(packedReference);
                 int referenceZ = ChunkPos.getPackedZ(packedReference);
 
-                Chunk referenceChunk = world.getChunk(referenceX, referenceZ, ChunkStatus.STRUCTURE_STARTS);
+                Chunk referenceChunk = accessor.world.getChunk(referenceX, referenceZ, ChunkStatus.STRUCTURE_STARTS);
                 StructureStart<?> start = referenceChunk.getStructureStart(feature);
                 if (start == null || !start.hasChildren()) {
                     continue;
@@ -601,6 +619,54 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
     }
 
     @Override
+    public OptionalInt sampleHeightmap(int x, int z, @Nullable BlockState[] states, @Nullable Predicate<BlockState> predicate, int minY, int noiseSizeY) {
+        int i = ChunkSectionPos.getSectionCoord(x);
+        int j = ChunkSectionPos.getSectionCoord(z);
+        int k = Math.floorDiv(x, this.horizontalNoiseResolution);
+        int l = Math.floorDiv(z, this.horizontalNoiseResolution);
+        int m = Math.floorMod(x, this.horizontalNoiseResolution);
+        int n = Math.floorMod(z, this.horizontalNoiseResolution);
+        double d = (double)m / (double)this.horizontalNoiseResolution;
+        double e = (double)n / (double)this.horizontalNoiseResolution;
+        double[][] ds = new double[][]{this.sampleNoiseColumn(k, l), this.sampleNoiseColumn(k, l + 1), this.sampleNoiseColumn(k + 1, l), this.sampleNoiseColumn(k + 1, l + 1)};
+
+        for(int o = noiseSizeY - 1; o >= 0; --o) {
+            double f = ds[0][o];
+            double g = ds[1][o];
+            double h = ds[2][o];
+            double p = ds[3][o];
+            double q = ds[0][o + 1];
+            double r = ds[1][o + 1];
+            double s = ds[2][o + 1];
+            double t = ds[3][o + 1];
+
+            for(int u = this.verticalNoiseResolution - 1; u >= 0; --u) {
+                double v = (double)u / (double)this.verticalNoiseResolution;
+                double w = MathHelper.lerp3(v, d, e, f, q, h, s, g, r, p, t);
+                int y = o * this.verticalNoiseResolution + u;
+                int aa = y + minY * this.verticalNoiseResolution;
+
+                BlockState blockState = Blocks.AIR.getDefaultState();
+                if (w > 0) {
+                    blockState = this.settings.wrapped.getDefaultBlock();
+                } else if (y < this.getSeaLevel()) {
+                    blockState = this.settings.wrapped.getDefaultFluid();
+                }
+
+                if (states != null) {
+                    states[y] = blockState;
+                }
+
+                if (predicate != null && predicate.test(blockState)) {
+                    return OptionalInt.of(aa + 1);
+                }
+            }
+        }
+
+        return OptionalInt.empty();
+    }
+
+    @Override
     public int getSeaLevel() {
         int cachedSeaLevel = this.cachedSeaLevel;
         if (cachedSeaLevel == Integer.MIN_VALUE) {
@@ -617,6 +683,15 @@ public class OverworldTwoChunkGenerator extends NoiseChunkGenerator {
         }
 
         return 0.0D;
+    }
+
+    private static double calculateStructureWeight(int x, int y, int z) {
+        double d = (double)(x * x + z * z);
+        double e = (double)y + 0.5D;
+        double f = e * e;
+        double g = Math.pow(2.718281828459045D, -(f / 16.0D + d / 16.0D));
+        double h = -e * MathHelper.fastInverseSqrt(f / 2.0D + d / 2.0D) / 2.0D;
+        return h * g;
     }
 
     private static class SurfaceParameters {

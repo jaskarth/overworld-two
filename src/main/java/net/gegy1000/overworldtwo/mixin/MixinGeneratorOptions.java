@@ -49,14 +49,14 @@ public class MixinGeneratorOptions {
             // get other misc data
             Registry<DimensionType> dimensions = dynamicRegistryManager.get(Registry.DIMENSION_TYPE_KEY);
             Registry<Biome> biomes = dynamicRegistryManager.get(Registry.BIOME_KEY);
-            Registry<ChunkGeneratorSettings> chunkgens = dynamicRegistryManager.get(Registry.NOISE_SETTINGS_WORLDGEN);
+            Registry<ChunkGeneratorSettings> chunkgens = dynamicRegistryManager.get(Registry.CHUNK_GENERATOR_SETTINGS_KEY);
             SimpleRegistry<DimensionOptions> dimensionOptions = DimensionType.createDefaultDimensionOptions(dimensions, biomes, chunkgens, seed);
 
             String generate_structures = (String)properties.get("generate-structures");
             boolean generateStructures = generate_structures == null || Boolean.parseBoolean(generate_structures);
 
             // return our chunk generator
-            cir.setReturnValue(new GeneratorOptions(seed, generateStructures, false, GeneratorOptions.method_28608(dimensions, dimensionOptions, new OverworldTwoChunkGenerator(new VanillaLayeredBiomeSource(seed, false, false, biomes), seed, OverworldTwoChunkGenerator.OVERWORLD))));
+            cir.setReturnValue(new GeneratorOptions(seed, generateStructures, false, GeneratorOptions.getRegistryWithReplacedOverworldGenerator(dimensions, dimensionOptions, new OverworldTwoChunkGenerator(new VanillaLayeredBiomeSource(seed, false, false, biomes), seed, OverworldTwoChunkGenerator.OVERWORLD))));
         }
     }
 }
